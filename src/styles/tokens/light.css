@@ -1,0 +1,64 @@
+/* DO NOT EDIT */
+:root, [data-theme="light"] {
+  --bg-default: var(--colors-neutral-0);
+  --bg-surface-1: var(--colors-neutral-50);
+  --bg-surface-2: var(--colors-neutral-100);
+  --bg-overlay: rgba(0, 0, 0, 0.4);
+  --bg-input: var(--colors-neutral-0);
+  --bg-tooltip: var(--colors-neutral-800);
+  --bg-modal: var(--colors-neutral-0);
+  --bg-sidebar: var(--colors-brand-firefly);
+  --bg-hover: var(--colors-neutral-100);
+  --bg-pressed: var(--colors-neutral-200);
+  --bg-selected: var(--colors-blue-50);
+  --bg-disabled: var(--colors-neutral-100);
+
+  --text-primary: var(--colors-brand-firefly);
+  --text-secondary: var(--colors-brand-lynch);
+  --text-tertiary: var(--colors-neutral-500);
+  --text-disabled: var(--colors-neutral-400);
+  --text-placeholder: var(--colors-neutral-400);
+  --text-inverse: var(--colors-neutral-0);
+  --text-on-primary: var(--colors-neutral-0);
+  --text-accent: var(--colors-brand-pelorous);
+  --text-link: var(--colors-brand-pelorous);
+  --text-success: var(--colors-green-600);
+  --text-warning: var(--colors-yellow-600);
+  --text-error: var(--colors-red-600);
+  --text-info: var(--colors-blue-600);
+
+  --border-default: var(--colors-neutral-200);
+  --border-subtle: var(--colors-neutral-100);
+  --border-strong: var(--colors-brand-cement);
+  --border-focus: var(--colors-brand-pelorous);
+
+  --action-primary-bg-default: var(--colors-brand-firefly);
+  --action-primary-bg-hover: #08171F; /* A darker tint of firefly */
+  --action-primary-bg-pressed: #08171F;
+  --action-primary-text: var(--colors-neutral-0);
+  --action-primary-bg-soft: #eef3f8; /* Soft firefly / neutral */
+
+  --action-destructive-bg-default: var(--colors-red-600);
+  --action-destructive-bg-hover: var(--colors-red-500);
+  --action-destructive-text: var(--colors-neutral-0);
+
+  --status-success-bg: var(--colors-green-50);
+  --status-success-text: var(--colors-green-600);
+  --status-success-border: var(--colors-green-500);
+  --status-success-icon: var(--colors-green-500);
+  
+  --status-warning-bg: var(--colors-yellow-50);
+  --status-warning-text: var(--colors-yellow-600);
+  --status-warning-border: var(--colors-yellow-500);
+  --status-warning-icon: var(--colors-yellow-500);
+
+  --status-error-bg: var(--colors-red-50);
+  --status-error-text: var(--colors-red-600);
+  --status-error-border: var(--colors-red-500);
+  --status-error-icon: var(--colors-red-500);
+
+  --status-info-bg: var(--colors-blue-50);
+  --status-info-text: var(--colors-blue-600);
+  --status-info-border: var(--colors-blue-500);
+  --status-info-icon: var(--colors-blue-500);
+}

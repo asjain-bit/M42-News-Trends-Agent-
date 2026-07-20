@@ -1,0 +1,39 @@
+/* DO NOT EDIT. Update by re-converting the designer's source file. */
+:root {
+  --colors-neutral-0: #ffffff;
+  --colors-neutral-50: #fafafa;
+  --colors-neutral-100: #f5f5f5;
+  --colors-neutral-200: #e5e5e5;
+  --colors-neutral-300: #d4d4d4;
+  --colors-neutral-400: #a3a3a3;
+  --colors-neutral-500: #737373;
+  --colors-neutral-600: #525252;
+  --colors-neutral-700: #404040;
+  --colors-neutral-800: #262626;
+  --colors-neutral-900: #171717;
+  
+  --colors-blue-50: #eff6ff;
+  --colors-blue-100: #dbeafe;
+  --colors-blue-500: #3b82f6;
+  --colors-blue-600: #2563eb;
+  --colors-blue-700: #1d4ed8;
+
+  --colors-red-50: #fef2f2;
+  --colors-red-500: #ef4444;
+  --colors-red-600: #dc2626;
+
+  --colors-green-50: #f0fdf4;
+  --colors-green-500: #22c55e;
+  --colors-green-600: #16a34a;
+
+  --colors-yellow-50: #fefce8;
+  --colors-yellow-500: #eab308;
+  --colors-yellow-600: #ca8a04;
+
+  /* M42 Brand Colors */
+  --colors-brand-firefly: #0d212c;
+  --colors-brand-pelorous: #36c0c9;
+  --colors-brand-glacier: #6fb0c7;
+  --colors-brand-lynch: #5b7e95;
+  --colors-brand-cement: #D8D9CF;
+}

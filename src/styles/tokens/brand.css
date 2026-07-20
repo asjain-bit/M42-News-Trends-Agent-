@@ -1,0 +1,7 @@
+/* 
+ * White-label brand overrides go here.
+ * Note: --text-tertiary is bumped slightly here for AA contrast as an example.
+ */
+:root, [data-theme="light"], [data-theme="dark"] {
+  --text-tertiary: var(--colors-neutral-500);
+}
