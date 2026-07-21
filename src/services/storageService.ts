@@ -13,6 +13,7 @@ export interface ReportVersion {
   versionNumber: number;
   createdAt: number;
   content: any; // Mocked content
+  comments?: Record<string, string[]>; // Maps block IDs/offsets to an array of comment text
   rating?: number;
   flagged?: boolean;
 }
@@ -26,6 +27,7 @@ export interface ReportThread {
   createdAt: number;
   updatedAt: number;
   status: "completed" | "generating" | "failed" | "partial";
+  isPinned?: boolean;
 }
 
 interface M42DB extends DBSchema {

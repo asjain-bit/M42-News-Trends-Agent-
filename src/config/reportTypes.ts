@@ -14,7 +14,7 @@ export const REPORT_TYPES: Record<string, ReportTypeConfig> = {
   techLandscape: {
     id: "techLandscape",
     label: "Tech Landscape",
-    description: "Market & technology landscape for a country + domain — players, funding, gaps and the \"why\".",
+    description: "Generate comprehensive landscape intelligence reports.",
     status: "active",
     required: ["country", "techDomain", "depth"],
     optional: ["focusLens"],

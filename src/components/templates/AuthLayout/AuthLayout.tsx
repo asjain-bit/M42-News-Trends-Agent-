@@ -55,6 +55,6 @@ const Feature = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
     <div className="w-10 h-10 rounded-lg bg-white shadow-sm border border-[var(--border-subtle)] flex items-center justify-center shrink-0">
       {icon}
     </div>
-    <h3 className="font-medium text-[var(--text-primary)] font-['Poppins'] text-lg">{title}</h3>
+    <h3 className="font-medium text-[var(--text-primary)] font-['Poppins'] text-base">{title}</h3>
   </div>
 );

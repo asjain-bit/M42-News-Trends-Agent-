@@ -1,157 +1,283 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
-import { reportService } from '../services/reportService';
-import { notificationService } from '../services/notificationService';
-import { ShieldCheck, Loader2, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Check, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { generateDummyReportSections } from '../utils/dummyReportData';
 
-const STAGES = ['Researching', 'Analysing', 'Scoring'];
+const TIMELINE_STEPS = [
+  "Initializing report",
+  "Understanding research scope",
+  "Collecting trusted sources",
+  "Validating information",
+  "Analyzing market intelligence",
+  "Generating insights",
+  "Structuring report",
+  "Performing quality checks",
+  "Finalizing report"
+];
+
+const HELPER_MESSAGES = [
+  "Searching verified sources...",
+  "Comparing market intelligence...",
+  "Reviewing recent developments...",
+  "Cross-validating research...",
+  "Building executive insights...",
+  "Organizing report sections...",
+  "Applying quality checks...",
+  "Preparing your report..."
+];
 
 export default function GenerateReport() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { threads, updateThread } = useAppStore();
-  const [currentStage, setCurrentStage] = useState<string>('Researching');
-  const generationStarted = useRef(false);
-
+  
+  const [stepIndex, setStepIndex] = useState(0);
+  const [helperIndex, setHelperIndex] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+  const [progressPct, setProgressPct] = useState(0);
+  
   const thread = threads.find(t => t.id === id);
 
+  // Helper text rotation
   useEffect(() => {
-    if (!thread) {
-      // If thread not found (maybe page refresh before loaded), wait a moment or redirect
-      const timeout = setTimeout(() => {
-        if (!threads.find(t => t.id === id)) {
-          navigate('/');
-        }
-      }, 1000);
-      return () => clearTimeout(timeout);
-    }
+    if (isComplete) return;
+    const interval = setInterval(() => {
+      setHelperIndex(prev => (prev + 1) % HELPER_MESSAGES.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isComplete]);
 
-    if (thread.status !== 'generating') {
-      navigate(`/report/${id}`);
+  // Timeline progression
+  useEffect(() => {
+    if (isComplete) return;
+    const interval = setInterval(() => {
+      setStepIndex(prev => {
+        if (prev < TIMELINE_STEPS.length - 1) return prev + 1;
+        return prev;
+      });
+    }, 1600);
+    return () => clearInterval(interval);
+  }, [isComplete]);
+
+  // Percentage progression
+  useEffect(() => {
+    if (isComplete) {
+      setProgressPct(100);
       return;
     }
+    const startTime = Date.now();
+    const duration = 15000;
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const pct = Math.min(99, Math.floor((elapsed / duration) * 100));
+      setProgressPct(pct);
+    }, 50);
+    return () => clearInterval(interval);
+  }, [isComplete]);
 
-    const generate = async () => {
-      if (generationStarted.current) return;
-      generationStarted.current = true;
+  // Completion trigger (~15 seconds total)
+  useEffect(() => {
+    const completeTimer = setTimeout(() => {
+      setIsComplete(true);
+      setStepIndex(TIMELINE_STEPS.length - 1); // Ensure final step is reached
       
-      try {
-        const newVersion = await reportService.generate(thread.inputs, (stage) => {
-          setCurrentStage(stage);
-        });
+      // Wait 700ms then start exit transition
+      setTimeout(() => {
+        setIsExiting(true);
         
-        // Finalize
-        newVersion.versionNumber = thread.versions.length + 1;
-        
-        await updateThread({
-          ...thread,
-          status: 'completed',
-          versions: [...thread.versions, newVersion],
-          updatedAt: Date.now()
-        });
-        
-        notificationService.notify("Your report is ready!", "success");
-        navigate(`/report/${id}`);
-      } catch (error) {
-        console.error("Generation failed", error);
-        await updateThread({ ...thread, status: 'failed' });
-      }
-    };
-
-    generate();
-  }, [id, thread, threads, navigate, updateThread]);
+        // Wait for exit transition to finish before navigating
+        setTimeout(() => {
+          if (thread) {
+            const newVersionNumber = thread.versions.length + 1;
+            const newVersion = {
+              id: `v${newVersionNumber}`,
+              versionNumber: newVersionNumber,
+              createdAt: Date.now(),
+              content: { sections: generateDummyReportSections(thread.inputs.depth, newVersionNumber) }
+            };
+            
+            updateThread({
+              ...thread,
+              status: 'completed',
+              versions: [...thread.versions, newVersion],
+              updatedAt: Date.now()
+            });
+            navigate(`/report/${id}`);
+          }
+        }, 500);
+      }, 700);
+      
+    }, 15000); // 15s simulation
+    
+    return () => clearTimeout(completeTimer);
+  }, [id, thread, navigate, updateThread]);
 
   if (!thread) return null;
 
-  const stageIndex = STAGES.indexOf(currentStage);
-
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 flex flex-col items-center">
+    <div className="fixed inset-0 overflow-visible font-sans flex items-center justify-center z-50">
       
-      <div className="text-center mb-12">
-        <h1 className="text-2xl font-bold font-['Poppins'] text-[var(--color-ink)] mb-2">Generating Intelligence</h1>
-        <p className="text-[var(--color-ink-muted)]">Please wait while the agent builds your report.</p>
-        <p className="text-xs text-[var(--color-ink-muted)] mt-2 italic bg-[var(--color-surface-muted)] inline-block px-3 py-1 rounded-md">
-          You can navigate away; progress will be saved.
-        </p>
-      </div>
+      {/* Background Overlay (black with 60% opacity and blur) */}
+      <AnimatePresence>
+        {!isExiting && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[5px]"
+          />
+        )}
+      </AnimatePresence>
 
-      <div className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-sm p-8 md:p-12 mb-8 flex flex-col items-center">
-         
-         {/* Live Progress Stage */}
-         <AnimatePresence mode="wait">
-            <motion.div 
-              key={currentStage}
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.4 }}
-              className="flex flex-col items-center mb-12"
-            >
-              <div className="relative flex items-center justify-center w-24 h-24 mb-6">
-                 <motion.div 
-                   animate={{ rotate: 360 }}
-                   transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
-                   className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[var(--color-accent)] border-r-[var(--color-accent)] opacity-80"
-                 />
-                 <motion.div 
-                   animate={{ rotate: -360 }}
-                   transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                   className="absolute inset-2 rounded-full border-[3px] border-transparent border-b-[var(--color-primary)] border-l-[var(--color-primary)] opacity-40"
-                 />
-                 <div className="bg-[var(--color-canvas)] rounded-full w-16 h-16 flex items-center justify-center shadow-inner">
-                    <Loader2 className="w-6 h-6 text-[var(--color-ink)] animate-pulse" />
-                 </div>
+      {/* Centered Modal Card */}
+      <AnimatePresence>
+        {!isExiting && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="relative z-50 w-full max-w-[540px] bg-white rounded-[20px] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.15)] flex flex-col p-10 mx-6 overflow-hidden"
+          >
+            
+            {/* Top Brand Animation */}
+            <div className="w-full h-full flex items-center justify-center mb-8 relative h-16 items-center">
+              {isComplete ? (
+                <motion.div
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20"
+                >
+                  <Check className="w-8 h-8 text-white" strokeWidth={3} />
+                </motion.div>
+              ) : (
+                <div className="relative w-14 h-14 flex items-center justify-center">
+                  {/* Glowing Orbiting Dots */}
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 rounded-full border border-[#36c0c9]/20"
+                  >
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-[#36c0c9] rounded-full shadow-[0_0_8px_rgba(54,192,201,0.8)]" />
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 bg-[#36c0c9]/60 rounded-full shadow-[0_0_6px_rgba(54,192,201,0.5)]" />
+                  </motion.div>
+                  {/* Center Pulse */}
+                  <motion.div 
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="w-8 h-8 bg-[#36c0c9]/10 rounded-full flex items-center justify-center"
+                  >
+                    <Sparkles className="w-4 h-4 text-[#36c0c9]" />
+                  </motion.div>
+                </div>
+              )}
+            </div>
+
+            {/* Header */}
+            <div className="text-center mb-10">
+              <h1 className="text-[24px] font-semibold font-['Poppins'] text-[#0D212C] mb-3 tracking-tight">
+                {isComplete ? "Report ready" : (thread.versions.length > 0 ? "Regenerating your report" : "Generating your report")}
+              </h1>
+              <p className="text-[14px] text-gray-500 leading-relaxed px-4">
+                We're researching, validating and organizing information from trusted sources.
+              </p>
+            </div>
+
+            {/* Vertical Timeline */}
+            <div className="flex flex-col gap-5 pl-4 mb-10 relative">
+              {/* Timeline line connecting dots */}
+              <div className="absolute left-[23px] top-3 bottom-3 w-[2px] bg-gray-100 z-0" />
+              
+              {TIMELINE_STEPS.map((step, idx) => {
+                const isDone = isComplete || idx < stepIndex;
+                const isActive = !isComplete && idx === stepIndex;
+                
+                return (
+                  <div key={step} className="flex items-start gap-4 relative z-10">
+                    <div className="w-4 h-4 mt-0.5 flex items-center justify-center shrink-0 relative bg-white">
+                      {isDone ? (
+                        <motion.div 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="w-4 h-4 flex items-center justify-center text-[#36c0c9]"
+                        >
+                          <CheckCircle2 className="w-4 h-4" strokeWidth={2.5} />
+                        </motion.div>
+                      ) : isActive ? (
+                        <>
+                          <motion.div 
+                            animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                            className="absolute inset-0 bg-[#36c0c9] rounded-full"
+                          />
+                          <div className="w-2 h-2 bg-[#36c0c9] rounded-full relative z-10 shadow-[0_0_5px_rgba(54,192,201,0.5)]" />
+                        </>
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-gray-200" />
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <motion.span 
+                        animate={isActive ? { opacity: [0.7, 1, 0.7] } : {}}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className={`text-[14px] font-['Poppins'] transition-colors duration-300 ${
+                          isDone ? 'text-gray-700 font-medium' : isActive ? 'text-[#36c0c9] font-medium' : 'text-gray-300'
+                        }`}
+                      >
+                        {step}
+                      </motion.span>
+                      
+                      {/* Small loading dots for active step */}
+                      {isActive && (
+                        <div className="flex gap-1 ml-1">
+                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} className="w-1 h-1 bg-[#36c0c9]/60 rounded-full" />
+                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} className="w-1 h-1 bg-[#36c0c9]/60 rounded-full" />
+                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} className="w-1 h-1 bg-[#36c0c9]/60 rounded-full" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Rotating Helper Text & Percentage */}
+            <div className="h-6 mb-2 flex items-center justify-between w-full">
+              <div className="relative flex-1">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={isComplete ? "complete" : helperIndex}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute inset-0 flex items-center text-[13px] text-gray-500 font-medium"
+                  >
+                    {isComplete ? "Finalizing rendering..." : HELPER_MESSAGES[helperIndex]}
+                  </motion.div>
+                </AnimatePresence>
               </div>
-              <h2 className="text-xl font-semibold font-['Poppins'] text-[var(--color-ink)]">{currentStage}...</h2>
-            </motion.div>
-         </AnimatePresence>
+              <div className="text-[14px] font-semibold text-[#0D212C] font-['Poppins']">
+                {progressPct}%
+              </div>
+            </div>
 
-         {/* Steps timeline */}
-         <div className="flex items-center justify-center w-full max-w-md gap-4">
-            {STAGES.map((stage, idx) => {
-               const isCompleted = idx < stageIndex;
-               const isActive = idx === stageIndex;
-               const isPending = idx > stageIndex;
-               
-               return (
-                 <div key={stage} className="flex flex-col items-center flex-1">
-                   <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 transition-colors duration-300 ${
-                     isCompleted ? 'bg-[var(--color-primary-soft)] text-[var(--color-primary)]' :
-                     isActive ? 'bg-[var(--color-primary)] text-white shadow-md' :
-                     'bg-[var(--color-canvas)] text-[var(--color-border)]'
-                   }`}>
-                     {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : <span className="text-sm font-semibold">{idx + 1}</span>}
-                   </div>
-                   <span className={`text-xs font-medium transition-colors ${
-                     isActive ? 'text-[var(--color-ink)]' : 'text-[var(--color-ink-muted)]'
-                   }`}>{stage}</span>
-                 </div>
-               )
-            })}
-         </div>
-      </div>
+            {/* Simulated Progress Bar */}
+            <div className="w-full h-[6px] bg-gray-100 rounded-full overflow-hidden relative">
+              <motion.div 
+                className="absolute top-0 bottom-0 left-0 bg-[#36c0c9] rounded-full"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
 
-      {/* Governance Band */}
-      <div className="w-full bg-[#E4F2F2] border border-[#C7E3E3] rounded-xl p-5 relative overflow-hidden">
-        <div className="absolute left-0 top-3 bottom-3 w-1 bg-[#0E7C86] rounded-r-md"></div>
-        <div className="pl-4">
-          <div className="text-[10px] font-semibold text-[#0E7C86] uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5" /> Governance · Running Continuously
-          </div>
-          <h3 className="text-sm font-semibold text-[var(--color-ink)] mb-3">Quality & Governance Layer</h3>
-          
-          <div className="flex flex-wrap gap-2">
-            {['Cite every claim (source + date)', 'Confidence scoring (High/Med/Low)', 'Guardrails & sensitivity check', 'Run audit log', 'Graceful failure handling'].map(item => (
-              <span key={item} className="text-xs font-medium text-[#0E7C86] bg-white border border-[#C7E3E3] rounded-md px-2.5 py-1 shadow-sm">
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

@@ -25,23 +25,11 @@ export default function Login() {
     }, 2500);
   };
 
-  if (isAuthenticating) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8f9fa] fixed inset-0 z-50">
-        <Loader2 className="w-10 h-10 animate-spin text-[var(--text-primary)] mb-6" />
-        <h2 className="text-xl font-semibold font-['Poppins'] text-[var(--text-primary)] mb-2">
-          Setting up your workspace...
-        </h2>
-        <p className="text-sm text-[var(--text-secondary)]">
-          Preparing the News & Trends Intelligence Agent environment.
-        </p>
-      </div>
-    );
-  }
+  // Inline loading is handled directly on the button now
 
   return (
     <AuthLayout>
-      <h2 className="text-2xl font-semibold font-['Poppins'] text-[var(--text-primary)] mb-2">
+      <h2 className="text-xl font-medium font-['Poppins'] text-[var(--text-primary)] mb-2">
         Welcome
       </h2>
       <p className="text-[var(--text-secondary)] text-sm mb-8 leading-relaxed max-w-sm mx-auto">
@@ -74,24 +62,27 @@ export default function Login() {
 
       <button 
         onClick={() => handleLogin('strategy')}
-        disabled={!ssoSelected}
-        className="w-full flex items-center justify-center gap-3 bg-[#36c0c9] border border-transparent rounded-lg px-4 py-3.5 text-sm font-semibold text-white hover:bg-[#2ba3aa] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled={!ssoSelected || isAuthenticating}
+        className="w-full flex items-center justify-center gap-3 bg-[#06212E] border border-transparent rounded-lg px-4 py-3.5 text-sm font-semibold text-white hover:bg-[#0a3549] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 21 21">
-          <path fill="#f25022" d="M1 1h9v9H1z"/>
-          <path fill="#7fba00" d="M11 1h9v9h-9z"/>
-          <path fill="#00a4ef" d="M1 11h9v9H1z"/>
-          <path fill="#ffb900" d="M11 11h9v9h-9z"/>
-        </svg>
-        Sign in with Microsoft SSO
+        {isAuthenticating ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Authenticating...
+          </>
+        ) : (
+          <>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 21 21">
+              <path fill="#f25022" d="M1 1h9v9H1z"/>
+              <path fill="#7fba00" d="M11 1h9v9h-9z"/>
+              <path fill="#00a4ef" d="M1 11h9v9H1z"/>
+              <path fill="#ffb900" d="M11 11h9v9h-9z"/>
+            </svg>
+            Sign in with Microsoft SSO
+          </>
+        )}
       </button>
 
-      <div className="mt-8 pt-6 border-t border-[var(--border-subtle)]">
-        <p className="text-xs text-[var(--text-tertiary)]">
-          Protected by your organization's Single Sign-On.<br/>
-          Need help? <a href="#" className="font-semibold hover:underline text-[var(--text-primary)]">Contact your administrator.</a>
-        </p>
-      </div>
     </AuthLayout>
   );
 }

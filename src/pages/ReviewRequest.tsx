@@ -61,7 +61,7 @@ export default function ReviewRequest() {
             </div>
             <div>
               <h2 className="text-xl font-semibold font-['Poppins'] text-[var(--color-ink)]">Tech Landscape</h2>
-              <p className="text-[var(--color-ink-muted)] text-sm">Market & technology analysis</p>
+              <p className="text-[var(--color-ink-muted)] text-sm">Tech Landscape analysis</p>
             </div>
           </div>
 

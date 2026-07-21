@@ -1,30 +1,102 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
-import { Home, FileText, LogOut, Search, Bell, PanelLeftClose, PanelRightClose, Menu } from 'lucide-react';
+import { Home, FileText, LogOut, Search, PanelLeftClose, PanelRightClose, Menu, MessageSquare, Pin, MoreVertical, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { notificationService } from '../services/notificationService';
+
+// Custom hook for clicking outside dropdowns
+function useOnClickOutside(ref: React.RefObject<any>, handler: (event: MouseEvent | TouchEvent) => void) {
+  React.useEffect(() => {
+    const listener = (event: MouseEvent | TouchEvent) => {
+      if (!ref.current || ref.current.contains(event.target as Node)) {
+        return;
+      }
+      handler(event);
+    };
+    document.addEventListener('mousedown', listener);
+    document.addEventListener('touchstart', listener);
+    return () => {
+      document.removeEventListener('mousedown', listener);
+      document.removeEventListener('touchstart', listener);
+    };
+  }, [ref, handler]);
+}
 
 export default function Layout() {
-  const { user, logout } = useAppStore();
+  const { user, logout, threads, updateThread, deleteThread } = useAppStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [threadToDelete, setThreadToDelete] = useState<{id: string, title: string} | null>(null);
+  const [threadToRename, setThreadToRename] = useState<{id: string, title: string} | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  useOnClickOutside(menuRef, () => setActiveMenuId(null));
+
+  const pinnedThreads = threads.filter(t => t.isPinned);
+  const recentThreads = threads.filter(t => !t.isPinned).slice(0, 10); // Keep sidebar clean
+
+  const togglePin = async (e: React.MouseEvent, thread: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await updateThread({ ...thread, isPinned: !thread.isPinned });
+    setActiveMenuId(null);
+  };
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
+  const handleDownload = (thread: any) => {
+    const latestVersion = thread.versions[thread.versions.length - 1];
+    const sections = latestVersion.content || [];
+    
+    // Minimal HTML structure containing only the text paragraphs
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'><title>${thread.title || 'Report'}</title></head>
+      <body>
+        ${sections.map((s: any) => `
+          <h2>${s.title}</h2>
+          ${s.blocks ? s.blocks.map((b: any) => {
+            if (b.type === 'text') return b.data.paragraphs.map((p: string) => `<p>${p}</p>`).join('');
+            if (b.type === 'quote') return `<blockquote>${b.data.quote}</blockquote>`;
+            return '';
+          }).join('') : s.content}
+        `).join('')}
+      </body>
+      </html>
+    `;
+    const blob = new Blob(['\ufeff', htmlContent], {
+      type: 'application/msword'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${thread.title || 'Report'}_v${latestVersion.versionNumber}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    notificationService.notify("Chat downloaded", "success");
+  };
+
   const navItems = [
     { id: 'new', label: 'New Report', path: '/new', icon: Home },
-    { id: 'reports', label: 'Reports', path: '/reports', icon: FileText },
+    { id: 'reports', label: 'All Reports', path: '/reports', icon: FileText },
   ];
 
   // Determine title based on route
   const getPageTitle = () => {
+    if (location.pathname === '/new/tech') return 'Generate New Report';
     if (location.pathname.includes('/new')) return 'New Report';
-    if (location.pathname.includes('/reports')) return 'Reports';
+    if (location.pathname.includes('/reports')) return 'All Reports';
+    if (location.pathname.includes('/report/')) return 'Report Preview';
     return 'Dashboard';
   };
 
@@ -40,6 +112,46 @@ export default function Layout() {
             onClick={() => setMobileOpen(false)}
             className="fixed inset-0 bg-black/30 z-40 md:hidden"
           />
+        )}
+        
+        {/* Logout Confirmation Modal */}
+        {showLogoutConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-center flex flex-col items-center border border-gray-100 relative"
+            >
+              <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-gray-50 to-white -z-10" />
+              <div className="p-8 flex flex-col items-center z-10 w-full">
+                <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mb-5 border border-red-100 shadow-sm text-red-500">
+                  <AlertTriangle className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-semibold text-[#0D212C] mb-2 font-['Poppins'] tracking-tight">Confirm Logout</h3>
+                <p className="text-[14px] text-gray-500 mb-8 leading-relaxed px-4">Are you sure you want to log out of your account? You will need to sign in again to access your reports.</p>
+                <div className="flex flex-col gap-3 w-full">
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2.5 text-[14px] font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors shadow-sm"
+                  >
+                    Yes, log out
+                  </button>
+                  <button 
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="w-full px-4 py-2.5 text-[14px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -69,10 +181,14 @@ export default function Layout() {
             </div>
           )}
           {collapsed && (
-            <div className="w-full flex flex-col items-center gap-4">
-              <button onClick={() => setCollapsed(false)} className="text-white/50 hover:text-white transition-colors">
-                <PanelRightClose className="w-5 h-5" />
-              </button>
+            <div 
+              className="w-full flex flex-col items-center gap-4 group cursor-pointer" 
+              onClick={() => setCollapsed(false)}
+            >
+              <div className="relative w-[34px] h-[24px] flex items-center justify-center">
+                <img src="/logo.png" alt="M42 Logo" className="absolute inset-0 h-6 w-auto object-contain transition-opacity group-hover:opacity-0" />
+                <PanelRightClose className="absolute inset-0 w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity mx-auto" />
+              </div>
             </div>
           )}
         </div>
@@ -86,19 +202,105 @@ export default function Layout() {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                   isActive
-                    ? 'bg-[#153443] text-white font-medium'
+                    ? 'bg-[#153443] text-white font-normal'
                     : 'text-[#FFFFFF94] hover:bg-white/5'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <item.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-[#36c0c9]' : 'text-[#FFFFFF94]'}`} />
+                  <item.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-white' : 'text-[#FFFFFF94]'}`} />
                   {!collapsed && <span className="text-[14px]">{item.label}</span>}
                 </>
               )}
             </NavLink>
           ))}
+
+          {!collapsed && (
+            <div className="mt-6 flex flex-col gap-6">
+              {/* Pinned Chats */}
+              {pinnedThreads.length > 0 && (
+                <div>
+                  <div className="px-4 text-[11px] font-semibold text-white uppercase tracking-wider mb-2">Pinned</div>
+                  <div className="flex flex-col gap-0.5">
+                    {pinnedThreads.map(thread => (
+                      <div 
+                        key={thread.id} 
+                        onClick={() => navigate(`/report/${thread.id}`)}
+                        className={`group flex items-center justify-between px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+                          location.pathname === `/report/${thread.id}` ? 'bg-[#153443]' : 'hover:bg-white/5'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 overflow-hidden">
+                          <Pin className="w-3.5 h-3.5 text-white/40 shrink-0 fill-current" />
+                          <span className={`text-[13px] truncate ${location.pathname === `/report/${thread.id}` ? 'text-white' : 'text-white/70'}`}>
+                            {thread.title || 'Untitled Report'}
+                          </span>
+                        </div>
+                        <div className="relative" ref={activeMenuId === thread.id ? menuRef : null}>
+                          <button 
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(activeMenuId === thread.id ? null : thread.id); }}
+                            className="opacity-0 group-hover:opacity-100 text-white/40 hover:text-white transition-opacity p-1"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                          {activeMenuId === thread.id && (
+                            <div className="absolute left-0 md:left-auto md:right-0 top-full mt-1 w-32 bg-[#153443] border border-white/10 rounded-md shadow-xl py-1 z-50">
+                              <button onClick={(e) => { togglePin(e, thread); notificationService.notify("Chat unpinned", "success"); }} className="w-full text-left px-3 py-1.5 text-[12px] text-white hover:bg-white/10 transition-colors">Unpin</button>
+                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(null); setThreadToRename({id: thread.id, title: thread.title}); setRenameValue(thread.title); }} className="w-full text-left px-3 py-1.5 text-[12px] text-white hover:bg-white/10 transition-colors">Rename</button>
+                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(null); handleDownload(thread); }} className="w-full text-left px-3 py-1.5 text-[12px] text-white hover:bg-white/10 transition-colors">Download</button>
+                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(null); setThreadToDelete({id: thread.id, title: thread.title}); }} className="w-full text-left px-3 py-1.5 text-[12px] text-red-400 hover:bg-white/10 transition-colors">Delete</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent Chats */}
+              {recentThreads.length > 0 && (
+                <div>
+                  <div className="px-4 text-[11px] font-semibold text-white uppercase tracking-wider mb-2">Recent</div>
+                  <div className="flex flex-col gap-0.5">
+                    {recentThreads.map(thread => (
+                      <div 
+                        key={thread.id} 
+                        onClick={() => navigate(`/report/${thread.id}`)}
+                        className={`group flex items-center justify-between px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+                          location.pathname === `/report/${thread.id}` ? 'bg-[#153443]' : 'hover:bg-white/5'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 overflow-hidden">
+                          <MessageSquare className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                          <span className={`text-[13px] truncate ${location.pathname === `/report/${thread.id}` ? 'text-white' : 'text-white/70'}`}>
+                            {thread.title || 'Untitled Report'}
+                          </span>
+                        </div>
+                        <div className="relative" ref={activeMenuId === thread.id ? menuRef : null}>
+                          <button 
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(activeMenuId === thread.id ? null : thread.id); }}
+                            className="opacity-0 group-hover:opacity-100 text-white/40 hover:text-white transition-opacity p-1"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                          {activeMenuId === thread.id && (
+                            <div className="absolute left-0 md:left-auto md:right-0 top-full mt-1 w-32 bg-[#153443] border border-white/10 rounded-md shadow-xl py-1 z-50">
+                              <button onClick={(e) => { togglePin(e, thread); notificationService.notify("Chat pinned", "success"); }} className="w-full text-left px-3 py-1.5 text-[12px] text-white hover:bg-white/10 transition-colors">Pin</button>
+                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(null); setThreadToRename({id: thread.id, title: thread.title}); setRenameValue(thread.title); }} className="w-full text-left px-3 py-1.5 text-[12px] text-white hover:bg-white/10 transition-colors">Rename</button>
+                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(null); handleDownload(thread); }} className="w-full text-left px-3 py-1.5 text-[12px] text-white hover:bg-white/10 transition-colors">Download</button>
+                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(null); setThreadToDelete({id: thread.id, title: thread.title}); }} className="w-full text-left px-3 py-1.5 text-[12px] text-red-400 hover:bg-white/10 transition-colors">Delete</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* Profile Details at bottom with 20px padding */}
@@ -113,13 +315,13 @@ export default function Layout() {
                   <span className="text-[14px] font-medium text-white truncate">{user?.name || 'Ashika Jain'}</span>
                   <span className="text-xs text-[#FFFFFF94] truncate">{user?.role === 'strategy' ? 'Strategy User' : 'General User'}</span>
                 </div>
-                <button onClick={handleLogout} className="text-[#FFFFFF94] hover:text-white transition-colors" title="Log out">
+                <button onClick={() => setShowLogoutConfirm(true)} className="text-[#FFFFFF94] hover:text-white transition-colors" title="Log out">
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             )}
             {collapsed && (
-              <button onClick={handleLogout} className="text-[#FFFFFF94] hover:text-white transition-colors absolute inset-0 flex items-center justify-center bg-[#0D212C] rounded-xl opacity-0 hover:opacity-100" title="Log out">
+              <button onClick={() => setShowLogoutConfirm(true)} className="text-[#FFFFFF94] hover:text-white transition-colors absolute inset-0 flex items-center justify-center bg-[#0D212C] rounded-xl opacity-0 hover:opacity-100" title="Log out">
                 <LogOut className="w-4 h-4" />
               </button>
             )}
@@ -130,7 +332,7 @@ export default function Layout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F6F7FB]">
         {/* Topbar */}
-        <header className="h-20 bg-transparent flex items-center justify-between px-6 md:px-10 shrink-0 z-30">
+        <header className="h-20 flex items-center justify-between px-6 md:px-10 shrink-0 z-30 bg-white border-b border-gray-200">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileOpen(true)}
@@ -143,31 +345,101 @@ export default function Layout() {
             </h1>
           </div>
           
-          <div className="flex items-center gap-6">
-            <div className="relative hidden md:block w-80">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search reports, topics, or keywords..." 
-                className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-[#36c0c9] transition-colors placeholder-gray-400 text-gray-700 shadow-sm" 
-              />
+          {location.pathname !== '/new/tech' && (
+            <div className="flex items-center gap-6">
+              <div className="relative hidden md:block w-80">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search reports, topics, or keywords..." 
+                  className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-[#36c0c9] transition-colors placeholder-gray-400 text-gray-700 shadow-sm" 
+                />
+              </div>
             </div>
-            <div className="relative cursor-pointer hover:bg-white/50 p-2 rounded-full transition-colors">
-              <Bell className="w-5 h-5 text-gray-700" />
-              <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-[#36c0c9] text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-[#F6F7FB]">
-                3
-              </span>
-            </div>
-          </div>
+          )}
         </header>
 
         {/* Content Area */}
         <main className="flex-1 overflow-auto bg-[#F6F7FB] relative">
-          <div className="relative z-10 h-full">
+          <div className="h-full">
             <Outlet />
           </div>
         </main>
       </div>
+
+      {/* Rename Modal */}
+      {threadToRename && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0D212C]/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-100">
+            <h3 className="text-xl font-bold font-['Poppins'] text-[#0D212C] mb-4">Rename Chat</h3>
+            <input 
+              type="text" 
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              className="w-full px-4 py-2 mb-6 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#36c0c9]/20 focus:border-[#36c0c9] text-[15px]"
+              placeholder="Enter new name"
+              autoFocus
+            />
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setThreadToRename(null)}
+                className="px-5 py-2 rounded-lg font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  if (renameValue.trim()) {
+                    const thread = threads.find(t => t.id === threadToRename.id);
+                    if (thread) {
+                      updateThread({ ...thread, title: renameValue.trim() });
+                      notificationService.notify("Chat renamed", "success");
+                    }
+                  }
+                  setThreadToRename(null);
+                }}
+                disabled={!renameValue.trim()}
+                className="px-5 py-2 rounded-lg font-medium text-white bg-[#36c0c9] hover:bg-[#2ea3aa] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {threadToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0D212C]/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-100">
+            <h3 className="text-xl font-bold font-['Poppins'] text-[#0D212C] mb-2">Delete Chat</h3>
+            <p className="text-gray-600 mb-6 text-[15px] leading-relaxed">
+              Are you sure you want to delete this chat? This cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setThreadToDelete(null)}
+                className="px-5 py-2 rounded-lg font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  deleteThread(threadToDelete.id);
+                  setThreadToDelete(null);
+                  notificationService.notify("Chat deleted", "success");
+                  if (location.pathname === `/report/${threadToDelete.id}`) {
+                    navigate('/');
+                  }
+                }}
+                className="px-5 py-2 rounded-lg font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
