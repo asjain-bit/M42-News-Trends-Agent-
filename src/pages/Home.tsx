@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
-import { Plus, FileText, ChevronRight, Clock, Filter, ArrowUpDown } from 'lucide-react';
+import { Plus, FileText, ChevronRight, Clock, Filter, ArrowUpDown, MoreVertical, Pin, Globe, Calendar, ShieldCheck } from 'lucide-react';
+import { notificationService } from '../services/notificationService';
 import { motion } from 'framer-motion';
 
 function useOnClickOutside(ref: React.RefObject<any>, handler: (event: MouseEvent | TouchEvent) => void) {
@@ -23,7 +24,39 @@ function useOnClickOutside(ref: React.RefObject<any>, handler: (event: MouseEven
 
 export default function Home() {
   const navigate = useNavigate();
-  const { threads } = useAppStore();
+  const { threads, loadThreads, deleteThread, updateThread, searchQuery } = useAppStore();
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useOnClickOutside(menuRef, () => setActiveMenuId(null));
+
+  const handleDownload = (thread: any) => {
+    const latestVersion = thread.versions[thread.versions.length - 1];
+    const sections = latestVersion.content?.sections || latestVersion.content || [];
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'><title>${thread.title || 'Report'}</title></head>
+      <body>
+        ${sections.map((s: any) => `
+          <h2>${s.title}</h2>
+          ${s.blocks ? s.blocks.map((b: any) => {
+            if (b.type === 'text') return b.data.paragraphs.map((p: string) => `<p>${p}</p>`).join('');
+            if (b.type === 'quote') return `<blockquote>${b.data.quote}</blockquote>`;
+            return '';
+          }).join('') : s.content}
+        `).join('')}
+      </body>
+      </html>
+    `;
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${thread.title || 'Report'}_v${latestVersion.versionNumber}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    notificationService.notify("Report downloaded", "success");
+  };
 
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
@@ -45,7 +78,14 @@ export default function Home() {
       result = result.filter(t => t.typeId === filterType);
     }
     
+    if (searchQuery.trim()) {
+      result = result.filter(t => (t.title || '').toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    
     result.sort((a, b) => {
+      if (a.isPinnedOnHome && !b.isPinnedOnHome) return -1;
+      if (!a.isPinnedOnHome && b.isPinnedOnHome) return 1;
+
       if (sortBy === 'newest') return b.updatedAt - a.updatedAt;
       if (sortBy === 'oldest') return a.updatedAt - b.updatedAt;
       if (sortBy === 'a-z') return (a.title || '').localeCompare(b.title || '');
@@ -53,7 +93,7 @@ export default function Home() {
     });
     
     return result;
-  }, [threads, filterType, sortBy]);
+  }, [threads, filterType, sortBy, searchQuery]);
 
   const container = {
     hidden: { opacity: 0 },
@@ -74,8 +114,8 @@ export default function Home() {
     <div className="w-full px-4 sm:px-8 lg:px-12 py-8 md:py-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-[28px] font-semibold font-['Poppins'] text-[var(--color-ink)] mb-2">My Reports</h1>
-          <p className="text-[var(--color-ink-muted)]">Access your intelligence reports or start a new request.</p>
+          <h1 className="text-[24px] font-semibold font-['Poppins'] text-[var(--color-ink)] mb-0.5 leading-tight">My Reports</h1>
+          <p className="text-[14px] text-[var(--color-ink-muted)] mt-0">Access your intelligence reports or start a new request.</p>
         </div>
         <button
           onClick={() => navigate('/new')}
@@ -112,7 +152,7 @@ export default function Home() {
             <div className="flex flex-wrap items-center gap-2">
               <button 
                 onClick={() => setFilterType('all')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${filterType === 'all' ? 'bg-[#36c0c9] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${filterType === 'all' ? 'bg-[#36c0c9] text-white' : 'bg-gray-200 text-gray-600'}`}
               >
                 All Reports
               </button>
@@ -120,7 +160,7 @@ export default function Home() {
                 <button
                   key={type}
                   onClick={() => setFilterType(type)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${filterType === type ? 'bg-[#36c0c9] text-white' : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'}`}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${filterType === type ? 'bg-[#36c0c9] text-white' : 'bg-gray-200 text-gray-600'}`}
                 >
                   {type === 'techLandscape' ? 'Tech Landscape' : type}
                 </button>
@@ -171,41 +211,98 @@ export default function Home() {
           animate="show"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {filteredAndSortedThreads.map((thread) => (
+          {filteredAndSortedThreads.map((thread) => {
+            const latestVersion = thread.versions?.[thread.versions.length - 1];
+            const sections = latestVersion?.content?.sections || [];
+            let avgConf = 0;
+            if (sections.length > 0) {
+              let total = 0;
+              sections.forEach((s: any) => {
+                let score = s.confidenceScore;
+                if (!score) {
+                  let hash = 0;
+                  const sid = s?.id || '';
+                  for (let i = 0; i < sid.length; i++) hash += sid.charCodeAt(i);
+                  score = 30 + (hash % 69) || 30;
+                }
+                total += score;
+              });
+              avgConf = Math.round(total / sections.length);
+            }
+            const confColor = avgConf >= 80 ? 'bg-green-100 text-green-700' : avgConf >= 40 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700';
+
+            return (
             <motion.div 
               key={thread.id} 
               variants={item}
               onClick={() => navigate(`/report/${thread.id}`)}
-              className="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.15)] transition-all cursor-pointer group flex flex-col h-full hover:-translate-y-1 duration-300"
+              className="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.15)] transition-all cursor-pointer group flex flex-col h-full duration-300"
             >
               <div className="flex items-start justify-between mb-5">
-                <div className="bg-gray-100 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-full capitalize tracking-wide">
-                  {thread.typeId === 'techLandscape' ? 'Tech Landscape' : thread.typeId}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="bg-[#e6f7f8] text-[#0E7C86] text-xs font-medium px-3 py-1.5 rounded-lg capitalize tracking-wide flex items-center gap-2">
+                    <Globe className="w-3.5 h-3.5" />
+                    {thread.typeId === 'techLandscape' ? 'Tech Landscape' : thread.typeId}
+                  </div>
+                  {avgConf > 0 && (
+                    <div className={`text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 ${confColor}`}>
+                      <ShieldCheck className="w-3 h-3" />
+                      {avgConf}%
+                    </div>
+                  )}
+                  {thread.isPinnedOnHome && (
+                    <Pin className="w-3 h-3 text-gray-400 fill-gray-400" />
+                  )}
                 </div>
-                <div className="text-xs font-medium text-gray-400 font-mono">
-                  v{thread.versions?.length || 1}
+                <div className="flex items-center gap-2">
+                  <div className="relative" ref={activeMenuId === thread.id ? menuRef : null}>
+                    <button 
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(activeMenuId === thread.id ? null : thread.id); }}
+                      className="p-1.5 -mr-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all z-10"
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                    {activeMenuId === thread.id && (
+                      <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateThread({...thread, isPinnedOnHome: !thread.isPinnedOnHome}); setActiveMenuId(null); notificationService.notify(thread.isPinnedOnHome ? "Report unpinned" : "Report pinned", "success"); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">{thread.isPinnedOnHome ? 'Unpin' : 'Pin'}</button>
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDownload(thread); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">Download</button>
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteThread(thread.id); setActiveMenuId(null); notificationService.notify("Report deleted", "success"); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">Delete</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               
-              <h3 className="font-medium text-[16px] text-[#0D212C] mb-3 font-['Poppins'] line-clamp-2 leading-tight">
+              <h3 className="font-semibold text-[17px] text-[#0D212C] mb-3 truncate font-['Poppins']">
                 {thread.title || "Untitled Intelligence Report"}
               </h3>
               
-              <p className="text-[13px] text-gray-500 line-clamp-2 mb-6">
-                Strategic analysis covering geographical domains, technology trends, and market depth configurations.
+              <p className="text-[14px] text-gray-500 line-clamp-3 mb-6 leading-relaxed">
+                Strategic analysis covering geographical domains, technology trends, and market depth configurations. {thread.title === 'UAE • Deep Dive Tech Landscape Generative AI & Machine Learning' ? 'AI ecosystem analysis covering market size, investments, regulations, key players and future opportunities in the UAE.' : ''}
               </p>
               
-              <div className="mt-auto pt-4 flex items-center justify-between text-xs text-gray-400 border-t border-gray-100">
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />
-                  {new Date(thread.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              <div className="flex items-center gap-2 mb-6 font-medium text-[13px]">
+                <span className="text-[#0E7C86]">AI</span>
+                <span className="text-gray-300">•</span>
+                <span className="text-[#0E7C86]">GenAI</span>
+                <span className="text-gray-300">•</span>
+                <span className="text-[#0E7C86]">Cloud</span>
+                <span className="text-[#0E7C86] ml-1">+2</span>
+              </div>
+              
+              <div className="mt-auto pt-4 flex items-center justify-between text-[13px] text-gray-500 border-t border-gray-100 font-medium">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-gray-400" />
+                  {42 + (thread.id.charCodeAt(0) % 20)} Pages
                 </div>
-                <div className="flex items-center gap-1 text-[#36c0c9] font-medium opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0 duration-300">
-                  Open <ChevronRight className="w-3.5 h-3.5" />
+                <div className="w-px h-4 bg-gray-200" />
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  {new Date(thread.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
               </div>
             </motion.div>
-          ))}
+          )})}
         </motion.div>
         )}
         </>

@@ -28,6 +28,8 @@ export interface ReportThread {
   updatedAt: number;
   status: "completed" | "generating" | "failed" | "partial";
   isPinned?: boolean;
+  isPinnedOnHome?: boolean;
+  feedbackSubmitted?: boolean;
 }
 
 interface M42DB extends DBSchema {

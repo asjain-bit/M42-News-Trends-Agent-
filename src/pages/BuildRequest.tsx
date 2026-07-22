@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
 import { v4 as uuidv4 } from 'uuid';
-import { ChevronLeft, Check, Upload, Clock, ChevronDown, Search, X, FileText, LayoutList, Paperclip, ShieldCheck, Globe, Tag, Layers, FileSearch, Target, MapPin } from 'lucide-react';
+import { ChevronLeft, Check, Upload, Clock, ChevronDown, Search, X, FileText, LayoutList, Paperclip, ShieldCheck, Globe, Tag, Layers, FileSearch, Target, MapPin, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Custom hook for clicking outside dropdowns
@@ -26,6 +26,7 @@ function useOnClickOutside(ref: React.RefObject<any>, handler: (event: MouseEven
 export default function BuildRequest() {
   const navigate = useNavigate();
   const { addThread } = useAppStore();
+  const [showCancelModal, setShowCancelModal] = useState(false);
   
   const [inputs, setInputs] = useState({
     reportType: 'Tech Landscape',
@@ -163,9 +164,7 @@ export default function BuildRequest() {
   const handleBack = () => {
     const hasChanges = inputs.geography || inputs.domains.length > 0 || inputs.depth !== 'Standard Analysis' || inputs.focusLens.length > 0 || inputs.additionalInstructions || inputs.files.length > 0;
     if (hasChanges) {
-      if (window.confirm("Leave this page? Your configuration has not been saved.")) {
-        navigate('/new');
-      }
+      setShowCancelModal(true);
     } else {
       navigate('/new');
     }
@@ -269,7 +268,7 @@ export default function BuildRequest() {
           </button>
 
           {/* Flat Form Sections */}
-          <div className="space-y-10 max-w-4xl">
+          <div className="space-y-10 w-full">
             
             {/* Report Type */}
             <div className="relative" ref={openDropdown === 'reportType' ? dropdownRef : null}>
@@ -425,7 +424,7 @@ export default function BuildRequest() {
               <label className="block text-[14px] font-semibold text-[#0D212C] mb-1">
                 Report Depth <span className="text-red-500">*</span>
               </label>
-              <p className="text-xs text-gray-500 mb-3">Choose the depth of analysis and expected report size.</p>
+              <p className="text-xs text-gray-500 mb-3">Choose the level of analysis and expected report size.</p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
@@ -450,6 +449,7 @@ export default function BuildRequest() {
                   </div>
                 ))}
               </div>
+              <p className="text-[12px] text-gray-500 mt-3">ⓘ Generation times are estimates and may vary depending on the complexity of your report.</p>
             </div>
 
             {/* Focus Lens */}
@@ -588,15 +588,7 @@ export default function BuildRequest() {
       </div>
 
       {/* Bottom Action Bar (Only spans left pane) */}
-      <div className="shrink-0 bg-white border-t border-gray-200 p-4 px-6 lg:px-10 flex items-center justify-between z-10 relative">
-        <div className="flex items-center gap-3 bg-[#f0f9fa] px-4 py-2.5 rounded-lg border border-[#36c0c9]/30">
-          <Clock className="w-5 h-5 text-[#36c0c9]" />
-          <div>
-            <div className="text-[12px] font-semibold text-[#0D212C]">Estimated Runtime</div>
-            <div className="text-[13px] text-[#36c0c9] font-medium">{getRuntime()}</div>
-          </div>
-        </div>
-
+      <div className="shrink-0 bg-white border-t border-gray-200 p-4 px-6 lg:px-10 flex items-center justify-end z-10 relative">
         <div className="flex items-center gap-3">
           <button 
             onClick={handleBack}
@@ -712,12 +704,53 @@ export default function BuildRequest() {
           </div>
 
           {/* Footer Info */}
-          <div className="p-6 bg-white border-t border-gray-100 shrink-0 flex gap-3 text-[13px] text-gray-500">
-             <ShieldCheck className="w-5 h-5 shrink-0 text-gray-400" />
-             <p className="leading-relaxed text-gray-500">You can review and edit the configuration anytime before the report is generated.</p>
+          <div className="p-6 bg-white border-t border-gray-100 shrink-0 flex flex-col gap-4 text-[13px] text-gray-500">
+            <div className="flex items-center gap-3 bg-[#f0f9fa] px-4 py-3 rounded-lg border border-[#36c0c9]/30 w-full">
+              <Clock className="w-5 h-5 text-[#36c0c9]" />
+              <div>
+                <div className="text-[12px] font-semibold text-[#0D212C]">Estimated Runtime</div>
+                <div className="text-[13px] text-[#36c0c9] font-medium">{getRuntime()}</div>
+              </div>
+            </div>
+             <div className="flex gap-3">
+               <ShieldCheck className="w-5 h-5 shrink-0 text-gray-400" />
+               <p className="leading-relaxed text-gray-500">You can review and edit the configuration anytime before the report is generated.</p>
+             </div>
           </div>
         </div>
       </div>
+
+
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0D212C]/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center flex flex-col items-center border border-gray-100">
+            <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mb-5 border border-red-100 shadow-sm text-red-500">
+               <AlertTriangle className="w-7 h-7" />
+            </div>
+            <h3 className="text-xl font-semibold text-[#0D212C] mb-2 font-['Poppins'] tracking-tight">Cancel Request?</h3>
+            <p className="text-gray-500 mb-8 text-[14px] leading-relaxed px-4">
+              Are you sure you want to cancel the request? Your configuration has not been saved and will be lost.
+            </p>
+            <div className="flex gap-3 w-full">
+              <button 
+                onClick={() => {
+                  setShowCancelModal(false);
+                  navigate('/new');
+                }}
+                className="flex-1 px-4 py-2.5 text-[14px] font-medium text-white bg-red-500 hover:bg-red-600 transition-colors rounded-xl shadow-sm"
+              >
+                Yes, cancel
+              </button>
+              <button 
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 px-4 py-2.5 text-[14px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors rounded-xl"
+              >
+                Continue editing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

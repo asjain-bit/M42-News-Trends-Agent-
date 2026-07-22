@@ -8,7 +8,6 @@ export default function Login() {
   const { login, user } = useAppStore();
   const navigate = useNavigate();
   
-  const [ssoSelected, setSsoSelected] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   if (user) {
@@ -27,6 +26,18 @@ export default function Login() {
 
   // Inline loading is handled directly on the button now
 
+  if (isAuthenticating) {
+    return (
+      <div className="fixed inset-0 bg-[#f8f9fc] flex items-center justify-center z-50">
+        <div className="flex flex-col items-center">
+          <Loader2 className="w-10 h-10 text-[#36c0c9] animate-spin mb-4" />
+          <h2 className="text-xl font-semibold text-[#0D212C] font-['Poppins']">Authenticating</h2>
+          <p className="text-[14px] text-gray-500 mt-2">Connecting via Single Sign-On...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AuthLayout>
       <h2 className="text-xl font-medium font-['Poppins'] text-[var(--text-primary)] mb-2">
@@ -36,51 +47,19 @@ export default function Login() {
         Sign in with your organisational account
       </p>
       
-      <div className="text-left mb-2">
-        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Select your login method</span>
-      </div>
-
-      <button 
-        type="button"
-        onClick={() => setSsoSelected(true)}
-        className={`w-full flex items-start gap-3 bg-white border border-gray-200 rounded-xl px-4 py-4 text-left transition-all mb-8 ${
-          ssoSelected 
-            ? 'bg-[#36c0c9]/10 border-[#36c0c9]/20' 
-            : 'hover:border-gray-300'
-        }`}
-      >
-        <div className="mt-0.5">
-           <Fingerprint className={`w-5 h-5 ${ssoSelected ? 'text-[#36c0c9]' : 'text-gray-500'}`} />
-        </div>
-        <div>
-          <div className={`font-semibold text-sm ${ssoSelected ? 'text-[var(--text-primary)]' : 'text-gray-700'}`}>
-            Single Sign-On
-          </div>
-          <div className="text-xs text-gray-500 mt-1">Authenticate via your enterprise network.</div>
-        </div>
-      </button>
-
       <button 
         onClick={() => handleLogin('strategy')}
-        disabled={!ssoSelected || isAuthenticating}
-        className="w-full flex items-center justify-center gap-3 bg-[#06212E] border border-transparent rounded-lg px-4 py-3.5 text-sm font-semibold text-white hover:bg-[#0a3549] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full flex items-start gap-3 bg-white border border-gray-200 rounded-xl px-4 py-4 text-left shadow-sm hover:shadow-md hover:border-[#36c0c9]/30 transition-all group"
       >
-        {isAuthenticating ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Authenticating...
-          </>
-        ) : (
-          <>
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 21 21">
-              <path fill="#f25022" d="M1 1h9v9H1z"/>
-              <path fill="#7fba00" d="M11 1h9v9h-9z"/>
-              <path fill="#00a4ef" d="M1 11h9v9H1z"/>
-              <path fill="#ffb900" d="M11 11h9v9h-9z"/>
-            </svg>
-            Sign in with Microsoft SSO
-          </>
-        )}
+        <div className="mt-0.5 bg-gray-50 p-2 rounded-lg group-hover:bg-[#36c0c9]/10 transition-colors">
+           <Fingerprint className="w-5 h-5 text-gray-500 group-hover:text-[#36c0c9] transition-colors" />
+        </div>
+        <div className="mt-1">
+          <div className="font-semibold text-[15px] text-[var(--text-primary)] group-hover:text-[#36c0c9] transition-colors">
+            Sign in with SSO
+          </div>
+          <div className="text-[13px] text-gray-500 mt-0.5">Authenticate via your enterprise network</div>
+        </div>
       </button>
 
     </AuthLayout>

@@ -13,11 +13,16 @@ interface AppState {
   addThread: (thread: ReportThread) => Promise<void>;
   updateThread: (thread: ReportThread) => Promise<void>;
   deleteThread: (id: string) => Promise<void>;
+  
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
   user: null,
   isAuthenticating: false,
+  searchQuery: '',
+  setSearchQuery: (query) => set({ searchQuery: query }),
   login: async (role) => {
     set({ isAuthenticating: true });
     try {

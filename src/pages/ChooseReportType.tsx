@@ -39,7 +39,7 @@ export default function ChooseReportType() {
     <div className="w-full mx-auto px-6 lg:px-10 py-10 h-[calc(100vh-80px)] flex flex-col">
       
       <div className="mb-10">
-        <h1 className="text-[26px] font-semibold font-['Poppins'] text-[#0D212C] mb-1 tracking-tight">Create a new intelligence report</h1>
+        <h1 className="text-[24px] font-semibold font-['Poppins'] text-[#0D212C] mb-1 tracking-tight">Create a new intelligence report</h1>
         <p className="text-gray-500 text-[15px]">Choose a report type and describe what you want to research.</p>
       </div>
 

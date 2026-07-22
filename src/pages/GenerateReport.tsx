@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
 import { Sparkles, Check, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,6 +28,27 @@ const HELPER_MESSAGES = [
   "Preparing your report..."
 ];
 
+const REGENERATE_TIMELINE_STEPS = [
+  "Initializing regeneration",
+  "Analyzing comments and feedback",
+  "Synthesizing new data sources",
+  "Re-evaluating market intelligence",
+  "Updating content sections",
+  "Refining document structure",
+  "Performing quality checks",
+  "Finalizing regenerated report"
+];
+
+const REGENERATE_HELPER_MESSAGES = [
+  "Processing user comments...",
+  "Integrating new feedback...",
+  "Updating analytical models...",
+  "Restructuring document flow...",
+  "Applying structural refinements...",
+  "Reviewing quality metrics...",
+  "Finalizing rendering..."
+];
+
 export default function GenerateReport() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -38,6 +59,12 @@ export default function GenerateReport() {
   const [isComplete, setIsComplete] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
+  const [showAllSteps, setShowAllSteps] = useState(false);
+  
+  const location = useLocation();
+  const isRegenerate = location.state?.regenerate || false;
+  const currentSteps = isRegenerate ? REGENERATE_TIMELINE_STEPS : TIMELINE_STEPS;
+  const currentHelpers = isRegenerate ? REGENERATE_HELPER_MESSAGES : HELPER_MESSAGES;
   
   const thread = threads.find(t => t.id === id);
 
@@ -55,7 +82,7 @@ export default function GenerateReport() {
     if (isComplete) return;
     const interval = setInterval(() => {
       setStepIndex(prev => {
-        if (prev < TIMELINE_STEPS.length - 1) return prev + 1;
+        if (prev < currentSteps.length - 1) return prev + 1;
         return prev;
       });
     }, 1600);
@@ -82,7 +109,7 @@ export default function GenerateReport() {
   useEffect(() => {
     const completeTimer = setTimeout(() => {
       setIsComplete(true);
-      setStepIndex(TIMELINE_STEPS.length - 1); // Ensure final step is reached
+      setStepIndex(currentSteps.length - 1); // Ensure final step is reached
       
       // Wait 700ms then start exit transition
       setTimeout(() => {
@@ -188,16 +215,31 @@ export default function GenerateReport() {
             </div>
 
             {/* Vertical Timeline */}
-            <div className="flex flex-col gap-5 pl-4 mb-10 relative">
+            <div className="flex flex-col gap-5 pl-4 mb-10 relative overflow-y-auto custom-scrollbar max-h-[320px] pr-2">
               {/* Timeline line connecting dots */}
               <div className="absolute left-[23px] top-3 bottom-3 w-[2px] bg-gray-100 z-0" />
               
-              {TIMELINE_STEPS.map((step, idx) => {
+              {!showAllSteps && stepIndex >= 4 && (
+                <button 
+                  onClick={() => setShowAllSteps(true)}
+                  className="text-[13px] font-medium text-[#36c0c9] hover:text-[#2a9a9f] self-start ml-6 transition-colors relative z-10 bg-white px-1"
+                >
+                  Show previous steps
+                </button>
+              )}
+              
+              {currentSteps.map((step, idx) => {
+                if (!showAllSteps && !isComplete) {
+                  const minVisible = Math.max(0, stepIndex - 3);
+                  const maxVisible = minVisible + 4;
+                  if (idx < minVisible || idx > maxVisible) return null;
+                }
+                
                 const isDone = isComplete || idx < stepIndex;
                 const isActive = !isComplete && idx === stepIndex;
                 
                 return (
-                  <div key={step} className="flex items-start gap-4 relative z-10">
+                  <div key={idx} className="flex items-start gap-4 relative z-10 min-h-[32px]">
                     <div className="w-4 h-4 mt-0.5 flex items-center justify-center shrink-0 relative bg-white">
                       {isDone ? (
                         <motion.div 
@@ -221,12 +263,12 @@ export default function GenerateReport() {
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full">
                       <motion.span 
                         animate={isActive ? { opacity: [0.7, 1, 0.7] } : {}}
                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                         className={`text-[14px] font-['Poppins'] transition-colors duration-300 ${
-                          isDone ? 'text-gray-700 font-medium' : isActive ? 'text-[#36c0c9] font-medium' : 'text-gray-300'
+                          isDone ? 'text-gray-700 font-medium' : isActive ? 'text-[#36c0c9] font-medium' : 'text-gray-400'
                         }`}
                       >
                         {step}
@@ -234,7 +276,7 @@ export default function GenerateReport() {
                       
                       {/* Small loading dots for active step */}
                       {isActive && (
-                        <div className="flex gap-1 ml-1">
+                        <div className="flex gap-1 ml-1 mt-0.5">
                           <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} className="w-1 h-1 bg-[#36c0c9]/60 rounded-full" />
                           <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} className="w-1 h-1 bg-[#36c0c9]/60 rounded-full" />
                           <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} className="w-1 h-1 bg-[#36c0c9]/60 rounded-full" />
@@ -258,7 +300,7 @@ export default function GenerateReport() {
                     transition={{ duration: 0.2 }}
                     className="absolute inset-0 flex items-center text-[13px] text-gray-500 font-medium"
                   >
-                    {isComplete ? "Finalizing rendering..." : HELPER_MESSAGES[helperIndex]}
+                    {isComplete ? "Finalizing rendering..." : currentHelpers[helperIndex % currentHelpers.length]}
                   </motion.div>
                 </AnimatePresence>
               </div>

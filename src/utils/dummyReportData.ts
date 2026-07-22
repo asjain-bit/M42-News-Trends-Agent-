@@ -73,11 +73,20 @@ export const generateDummyReportSections = (depth: string = "Standard", version:
 
   // Base Sections
   const sections: ReportSection[] = [];
+  
+  const generateConfidence = () => {
+    const score = Math.floor(Math.random() * 69) + 30; // 30-98
+    let reason = "Verified against primary government databases.";
+    if (score < 40) reason = "Based on limited secondary sources and market estimates.";
+    else if (score < 80) reason = "Cross-referenced with recent industry reports.";
+    return { confidenceScore: score, confidenceReason: reason };
+  };
 
   // Section 1: Executive Summary
   sections.push({
-    id: "executive-summary",
-    title: "Executive Summary",
+    id: 'exec-summary',
+    title: 'Executive Summary',
+    ...generateConfidence(),
     blocks: [
       textBlock("es-text-1", 1),
       kpiBlock("es-kpi-1", [
@@ -110,8 +119,9 @@ export const generateDummyReportSections = (depth: string = "Standard", version:
 
   // Section 2: Market Overview & Trends
   sections.push({
-    id: "market-overview",
-    title: "Market Overview & Trends",
+    id: 'market-analysis',
+    title: 'Market Analysis & Insights',
+    ...generateConfidence(),
     blocks: [
       textBlock("mo-text-1", 2),
       chartBlock(
@@ -142,7 +152,8 @@ export const generateDummyReportSections = (depth: string = "Standard", version:
           { segment: "Cybersecurity Autonomous Defense", cagr: "+112%", maturity: "Growth", risk: "Medium", badgeColor: "yellow" }
         ]
       ),
-      textBlock("mo-text-3", 2)
+      textBlock("mo-text-3", 2),
+      sourcesBlock("mo-sources")
     ]
   });
 
@@ -180,8 +191,9 @@ export const generateDummyReportSections = (depth: string = "Standard", version:
   // Inject V2 regeneration insight if needed
   if (isV2) {
     sections.unshift({
-      id: "regenerated-insight",
-      title: "Updated Research Insights (v2)",
+      id: 'version-diff',
+      title: 'Version Highlights',
+      ...generateConfidence(),
       blocks: [
         calloutBlock("v2-callout", "Business Impact", "New Data Integrated", "Based on your feedback, this version incorporates Q3 institutional capital deployment metrics and revised supply chain forecasts."),
         textBlock("v2-text", 2),
@@ -194,7 +206,8 @@ export const generateDummyReportSections = (depth: string = "Standard", version:
   for (let i = 1; i <= 7; i++) {
     sections.push({
       id: `deep-dive-${i}`,
-      title: `Strategic Deep Dive: Sector Focus ${i}`,
+      title: `Deep Dive: ${['Regulatory', 'Investment', 'Risk', 'Talent', 'Future Trends', 'Competitor Matrix', 'Strategic Roadmap'][i - 1]}`,
+      ...generateConfidence(),
       blocks: [
         textBlock(`dd-${i}-text-1`, 3),
         kpiBlock(`dd-${i}-kpi`, [

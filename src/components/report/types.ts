@@ -8,7 +8,8 @@ export type BlockType =
   | 'table' 
   | 'image' 
   | 'quote' 
-  | 'two-column';
+  | 'two-column'
+  | 'sources-list';
 
 export interface ReportBlock {
   id: string;
@@ -20,4 +21,6 @@ export interface ReportSection {
   id: string;
   title: string;
   blocks: ReportBlock[];
+  confidenceScore?: number;
+  confidenceReason?: string;
 }
