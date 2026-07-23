@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
-import { Sparkles, Check, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Check, CheckCircle2, Shrink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateDummyReportSections } from '../utils/dummyReportData';
 
@@ -151,6 +151,13 @@ export default function GenerateReport() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="relative z-50 w-full max-w-[540px] bg-white rounded-[20px] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.15)] flex flex-col p-10 mx-6 overflow-hidden"
           >
+            <button 
+              onClick={() => navigate('/')}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors z-[100]"
+              title="Minimize to Background"
+            >
+              <Shrink className="w-5 h-5" />
+            </button>
             
             {/* Top Brand Animation */}
             <div className="w-full h-full flex items-center justify-center mb-8 relative h-16 items-center">
@@ -297,6 +304,13 @@ export default function GenerateReport() {
                 style={{ width: `${progressPct}%` }}
               />
             </div>
+
+            <div className="mt-8 flex justify-center">
+              <p className="text-[12px] text-gray-400 text-center leading-relaxed">
+                <span className="font-medium text-gray-500">Note:</span> You can minimize this window and continue working.<br/>We'll notify you as soon as your report is ready.
+              </p>
+            </div>
+
 
           </motion.div>
         )}

@@ -238,9 +238,14 @@ export default function ReportSummary() {
     return () => observer.disconnect();
   }, [visibleSections]);
 
-  const averageConfidence = visibleSections && visibleSections.length > 0 
-    ? Math.round(visibleSections.reduce((acc: number, s: any) => acc + (s.confidenceScore || 0), 0) / visibleSections.length)
+  const averageConfidenceRaw = latestVersion.content.sections.length > 0 
+    ? Math.round(latestVersion.content.sections.reduce((acc: number, s: any) => acc + (s.confidenceScore || 0), 0) / latestVersion.content.sections.length) 
     : 0;
+    
+  let averageConfidence = averageConfidenceRaw;
+  if (threadIdx === 0) averageConfidence = 85;
+  else if (threadIdx === 1) averageConfidence = 55;
+  else if (threadIdx === 2) averageConfidence = 35;
 
   useEffect(() => {
     if (activeTab !== 'word-document' || !latestVersion.comments) {
@@ -327,6 +332,15 @@ export default function ReportSummary() {
           <img src="${window.location.origin}/logo.png" alt="M42 Logo" style="height: 40px; margin-bottom: 50pt;" />
           <div class="cover-subtitle">Strategic Intelligence</div>
           <div class="cover-title">${thread.title}</div>
+          
+          <div style="margin-bottom: 30pt;">
+            <span style="padding: 6px 12px; font-size: 12pt; font-weight: bold; ${
+              averageConfidence >= 80 ? 'background-color: #e6ffed; color: #1a7f37; border: 1px solid #a3dcaf;' :
+              averageConfidence >= 40 ? 'background-color: #fff8c5; color: #9a6700; border: 1px solid #f8e3a1;' :
+              'background-color: #ffebe9; color: #cf222e; border: 1px solid #ff8182;'
+            }">Overall Confidence: ${averageConfidence >= 80 ? 'High' : averageConfidence >= 40 ? 'Medium' : 'Low'}</span>
+          </div>
+
           <div class="cover-desc">Comprehensive market analysis, technology landscape evaluation, and strategic roadmap recommendations.</div>
           <div class="cover-footer">
             Prepared For<br/>
@@ -343,6 +357,11 @@ export default function ReportSummary() {
         <!-- Sections -->
         ${latestVersion.content.sections.map((s: any, i: number) => `
           <h2 id="section-${i}">${s.title}</h2>
+          ${s.confidenceScore ? `<p style="margin-bottom: 15pt;"><span style="padding: 4px 8px; font-size: 10pt; font-weight: bold; ${
+            s.confidenceScore >= 80 ? 'background-color: #e6ffed; color: #1a7f37; border: 1px solid #a3dcaf;' :
+            s.confidenceScore >= 40 ? 'background-color: #fff8c5; color: #9a6700; border: 1px solid #f8e3a1;' :
+            'background-color: #ffebe9; color: #cf222e; border: 1px solid #ff8182;'
+          }">${s.confidenceScore >= 80 ? 'High' : s.confidenceScore >= 40 ? 'Medium' : 'Low'} Confidence</span></p>` : ''}
           ${s.blocks ? s.blocks.map((b: any) => {
             if (b.type === 'text') return b.data.paragraphs.map((p: string) => `<p>${p}</p>`).join('');
             
@@ -652,23 +671,16 @@ export default function ReportSummary() {
                     )}
                   </div>
                   
-                  {(() => {
-                    let avgConf = averageConfidence;
-                    if (threadIdx === 0) avgConf = 85;
-                    else if (threadIdx === 1) avgConf = 55;
-                    else if (threadIdx === 2) avgConf = 35;
-                    
-                    return avgConf > 0 && (
+                  {averageConfidence > 0 && (
                       <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px] font-semibold border ml-2 ${
-                        avgConf >= 80 ? 'bg-green-50 text-green-700 border-green-100' : 
-                        avgConf >= 40 ? 'bg-orange-50 text-orange-700 border-orange-100' : 
+                        averageConfidence >= 80 ? 'bg-green-50 text-green-700 border-green-100' : 
+                        averageConfidence >= 40 ? 'bg-orange-50 text-orange-700 border-orange-100' : 
                         'bg-red-50 text-red-700 border-red-100'
                       }`}>
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        {avgConf >= 80 ? 'High' : avgConf >= 40 ? 'Medium' : 'Low'} Confidence
+                        {averageConfidence >= 80 ? 'High' : averageConfidence >= 40 ? 'Medium' : 'Low'} Confidence
                       </div>
-                    );
-                  })()}
+                  )}
                </div>
             </div>
 
@@ -695,6 +707,18 @@ export default function ReportSummary() {
                         {thread.title}
                       </h1>
                       <div className="w-24 h-1.5 bg-[#36c0c9] mb-8 z-10" />
+                      
+                      {averageConfidence > 0 && (
+                        <div className={`mb-8 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-semibold border ${
+                          averageConfidence >= 80 ? 'bg-green-50 text-green-700 border-green-100' : 
+                          averageConfidence >= 40 ? 'bg-orange-50 text-orange-700 border-orange-100' : 
+                          'bg-red-50 text-red-700 border-red-100'
+                        } relative z-10 w-fit`}>
+                          <ShieldCheck className="w-4 h-4" />
+                          Overall Confidence: {averageConfidence >= 80 ? 'High' : averageConfidence >= 40 ? 'Medium' : 'Low'}
+                        </div>
+                      )}
+                      
                       <p className="text-xl text-gray-500 mb-16 max-w-2xl leading-relaxed z-10 font-light">
                         Comprehensive market analysis, technology landscape evaluation, and strategic roadmap recommendations.
                       </p>
@@ -741,9 +765,19 @@ export default function ReportSummary() {
                         ref={el => { sectionRefs.current[idx] = el; }}
                         className="scroll-mt-16 h-full"
                       >
-                        <h2 className="text-2xl lg:text-3xl font-semibold font-['Poppins'] text-[#0D212C] mb-8 pb-4 border-b border-gray-100">
+                        <h2 className={`text-2xl lg:text-3xl font-semibold font-['Poppins'] text-[#0D212C] ${activeTab === 'word-document' ? 'mb-4' : 'mb-8 pb-4 border-b border-gray-100'}`}>
                           {section.title}
                         </h2>
+                        {activeTab === 'word-document' && section.confidenceScore && (
+                          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold border mb-8 ${
+                            section.confidenceScore >= 80 ? 'bg-green-50 text-green-700 border-green-100' : 
+                            section.confidenceScore >= 40 ? 'bg-orange-50 text-orange-700 border-orange-100' : 
+                            'bg-red-50 text-red-700 border-red-100'
+                          }`}>
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            {section.confidenceScore >= 80 ? 'High' : section.confidenceScore >= 40 ? 'Medium' : 'Low'} Confidence
+                          </div>
+                        )}
                         {section.blocks ? (
                           <ReportRenderer blocks={section.blocks} isWordDocument={activeTab === 'word-document'} />
                         ) : (
