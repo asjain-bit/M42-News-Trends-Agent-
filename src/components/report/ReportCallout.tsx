@@ -8,21 +8,27 @@ interface ReportCalloutProps {
     title: string;
     content: string;
   };
+  isWordDocument?: boolean;
 }
 
-export const ReportCallout: React.FC<ReportCalloutProps> = ({ data }) => {
+export const ReportCallout: React.FC<ReportCalloutProps> = ({ data, isWordDocument }) => {
   if (data.calloutType === 'Sources') {
+    const sources = [
+      { name: 'Financial Times', icon: 'https://www.google.com/s2/favicons?domain=ft.com&sz=128', url: 'https://ft.com' },
+      { name: 'Gartner Research', icon: 'https://www.google.com/s2/favicons?domain=gartner.com&sz=128', url: 'https://gartner.com' },
+      { name: 'Bloomberg', icon: 'https://www.google.com/s2/favicons?domain=bloomberg.com&sz=128', url: 'https://bloomberg.com' }
+    ];
     return (
-      <div className="flex items-center gap-3 mt-6 pt-4 border-t border-gray-100">
-         <span className="text-[13px] font-medium text-gray-500">Sources:</span>
-         <div className="flex -space-x-2">
-           {['https://www.google.com/s2/favicons?domain=ft.com&sz=128', 'https://www.google.com/s2/favicons?domain=gartner.com&sz=128', 'https://www.google.com/s2/favicons?domain=bloomberg.com&sz=128'].map((icon: string, i: number) => (
-              <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-white shadow-sm flex items-center justify-center overflow-hidden">
-                 <img src={icon} alt="source" className="w-4 h-4 object-contain" />
-              </div>
+      <div className="flex flex-col gap-3 mt-8 pt-5 border-t border-gray-100">
+         <span className="text-[13px] font-semibold text-gray-500 uppercase tracking-wider">Sources</span>
+         <div className="flex flex-wrap gap-2.5">
+           {sources.map((source: any, i: number) => (
+              <a key={i} href={source.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors group">
+                 <img src={source.icon} alt={source.name} className="w-4 h-4 object-contain group-hover:scale-110 transition-transform" />
+                 <span className="text-[13px] text-gray-700 font-medium">{source.name}</span>
+              </a>
            ))}
          </div>
-         <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-[11px] font-medium">+3 more</span>
       </div>
     );
   }
@@ -64,6 +70,15 @@ export const ReportCallout: React.FC<ReportCalloutProps> = ({ data }) => {
   };
 
   const style = getStyle();
+
+  if (isWordDocument) {
+    return (
+      <div className={`my-8 rounded-2xl p-6 ${style.wrapper} border`}>
+        <h4 className={`text-lg font-bold mb-2 ${style.title}`}>{data.title}</h4>
+        <p className="leading-relaxed text-gray-800">{data.content}</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div 

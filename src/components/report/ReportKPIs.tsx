@@ -11,9 +11,35 @@ interface ReportKPIsProps {
       change?: string;
     }>;
   };
+  isWordDocument?: boolean;
 }
 
-export const ReportKPIs: React.FC<ReportKPIsProps> = ({ data }) => {
+export const ReportKPIs: React.FC<ReportKPIsProps> = ({ data, isWordDocument }) => {
+  if (isWordDocument) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 my-8">
+        {data.kpis.map((kpi, idx) => (
+          <div 
+            key={idx}
+            className="border border-gray-300 p-4 bg-gray-50"
+          >
+            <div className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">
+              {kpi.label}
+            </div>
+            <div className="text-2xl font-bold text-black mb-1">
+              {kpi.value}
+            </div>
+            {kpi.trend && (
+              <div className="text-sm text-gray-600">
+                {kpi.trend === 'up' ? 'Trend: Up' : 'Trend: Down'} ({kpi.change})
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 my-8">
       {data.kpis.map((kpi, idx) => (

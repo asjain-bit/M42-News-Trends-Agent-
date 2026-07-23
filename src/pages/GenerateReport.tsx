@@ -105,9 +105,9 @@ export default function GenerateReport() {
     return () => clearInterval(interval);
   }, [isComplete]);
 
-  // Completion trigger (~15 seconds total)
+  // Listen for completion
   useEffect(() => {
-    const completeTimer = setTimeout(() => {
+    if (thread?.status === 'completed') {
       setIsComplete(true);
       setStepIndex(currentSteps.length - 1); // Ensure final step is reached
       
@@ -117,30 +117,11 @@ export default function GenerateReport() {
         
         // Wait for exit transition to finish before navigating
         setTimeout(() => {
-          if (thread) {
-            const newVersionNumber = thread.versions.length + 1;
-            const newVersion = {
-              id: `v${newVersionNumber}`,
-              versionNumber: newVersionNumber,
-              createdAt: Date.now(),
-              content: { sections: generateDummyReportSections(thread.inputs.depth, newVersionNumber) }
-            };
-            
-            updateThread({
-              ...thread,
-              status: 'completed',
-              versions: [...thread.versions, newVersion],
-              updatedAt: Date.now()
-            });
-            navigate(`/report/${id}`);
-          }
+          navigate(`/report/${id}`);
         }, 500);
       }, 700);
-      
-    }, 15000); // 15s simulation
-    
-    return () => clearTimeout(completeTimer);
-  }, [id, thread, navigate, updateThread]);
+    }
+  }, [thread?.status, id, navigate, currentSteps.length]);
 
   if (!thread) return null;
 
@@ -215,7 +196,7 @@ export default function GenerateReport() {
             </div>
 
             {/* Vertical Timeline */}
-            <div className="flex flex-col gap-5 pl-4 mb-10 relative overflow-y-auto custom-scrollbar max-h-[320px] pr-2">
+            <div className="flex flex-col gap-5 pl-4 mb-10 relative overflow-y-auto custom-scrollbar h-[280px] pr-2">
               {/* Timeline line connecting dots */}
               <div className="absolute left-[23px] top-3 bottom-3 w-[2px] bg-gray-100 z-0" />
               

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { AuthLayout } from '../components/templates/AuthLayout';
-import { Loader2, Fingerprint } from 'lucide-react';
+import { Loader, Fingerprint } from 'lucide-react';
 
 export default function Login() {
   const { login, user } = useAppStore();
@@ -30,9 +30,11 @@ export default function Login() {
     return (
       <div className="fixed inset-0 bg-[#f8f9fc] flex items-center justify-center z-50">
         <div className="flex flex-col items-center">
-          <Loader2 className="w-10 h-10 text-[#36c0c9] animate-spin mb-4" />
-          <h2 className="text-xl font-semibold text-[#0D212C] font-['Poppins']">Authenticating</h2>
-          <p className="text-[14px] text-gray-500 mt-2">Connecting via Single Sign-On...</p>
+          <div className="text-[#0D212C] mb-4">
+            <Loader className="w-12 h-12 animate-spin" />
+          </div>
+          <h2 className="text-[20px] font-semibold text-[#0D212C] font-['Poppins'] mb-2">Setting up your workspace...</h2>
+          <p className="text-[14px] text-gray-500">Preparing the M42 Intelligence environment.</p>
         </div>
       </div>
     );

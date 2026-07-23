@@ -70,9 +70,7 @@ export default function ReviewRequest() {
                 <span className="block text-xs font-semibold text-[var(--color-ink-muted)] uppercase tracking-wider mb-1">Scope</span>
                 <p className="text-lg text-[var(--color-ink)] font-medium">
                   {inputs.country} <span className="text-[var(--color-border)] mx-2">•</span> {inputs.techDomain}
-                  {inputs.focusLens && (
-                    <><span className="text-[var(--color-border)] mx-2">•</span> Focus: {inputs.focusLens}</>
-                  )}
+                  <span className="text-[var(--color-border)] mx-2">•</span> Focus: {inputs.focusLens || 'None'}
                 </p>
              </div>
 
@@ -87,14 +85,18 @@ export default function ReviewRequest() {
                </div>
              </div>
 
-             {inputs.prompt && (
-               <div>
-                  <span className="block text-xs font-semibold text-[var(--color-ink-muted)] uppercase tracking-wider mb-1">Prompt Details</span>
+             <div>
+                <span className="block text-xs font-semibold text-[var(--color-ink-muted)] uppercase tracking-wider mb-1">Prompt Details (Optional)</span>
+                {inputs.prompt ? (
                   <p className="text-[var(--color-ink)] italic bg-[var(--color-canvas)] p-3 rounded-lg text-sm border border-[var(--color-border)]">
                     "{inputs.prompt}"
                   </p>
-               </div>
-             )}
+                ) : (
+                  <p className="text-[var(--color-ink-muted)] italic text-sm">
+                    No additional prompt provided.
+                  </p>
+                )}
+             </div>
           </div>
         </div>
 

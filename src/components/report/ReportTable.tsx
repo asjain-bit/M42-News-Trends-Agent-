@@ -6,9 +6,40 @@ interface ReportTableProps {
     columns: Array<{ key: string; label: string }>;
     rows: Array<any>;
   };
+  isWordDocument?: boolean;
 }
 
-export const ReportTable: React.FC<ReportTableProps> = ({ data }) => {
+export const ReportTable: React.FC<ReportTableProps> = ({ data, isWordDocument }) => {
+  if (isWordDocument) {
+    return (
+      <div className="my-8">
+        <h3 className="text-lg font-bold text-[#0D212C] mb-4">{data.title}</h3>
+        <table className="w-full text-left border-collapse border border-gray-300">
+          <thead>
+            <tr>
+              {data.columns.map((col) => (
+                <th key={col.key} className="border border-gray-300 px-4 py-2 font-bold bg-gray-100">
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.rows.map((row, rowIdx) => (
+              <tr key={rowIdx}>
+                {data.columns.map((col) => (
+                  <td key={col.key} className="border border-gray-300 px-4 py-2">
+                    {row[col.key]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   return (
     <div className="my-8 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
       <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
@@ -27,7 +58,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({ data }) => {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {data.rows.map((row, rowIdx) => (
-              <tr key={rowIdx} className="hover:bg-gray-50/50 transition-colors">
+              <tr key={rowIdx} className={isWordDocument ? "" : "hover:bg-gray-50/50 transition-colors"}>
                 {data.columns.map((col, colIdx) => (
                   <td key={col.key} className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
                     {col.key === 'risk' ? (

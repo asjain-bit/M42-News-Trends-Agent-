@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
-import { Home, FileText, LogOut, Search, PanelLeftClose, PanelRightClose, Menu, MessageSquare, Pin, MoreVertical, AlertTriangle, Plus, Trash2, X, CheckCircle } from 'lucide-react';
+import { Home, FileText, LogOut, Search, PanelLeftClose, PanelRightClose, Menu, MessageSquare, Pin, MoreVertical, AlertTriangle, Plus, Trash2, X, CheckCircle, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService';
 
@@ -24,7 +24,7 @@ function useOnClickOutside(ref: React.RefObject<any>, handler: (event: MouseEven
 }
 
 export default function Layout() {
-  const { user, logout, threads, updateThread, deleteThread, loadThreads, searchQuery, setSearchQuery } = useAppStore();
+  const { user, logout, threads, updateThread, deleteThread, loadThreads, searchQuery, setSearchQuery, notifications, markNotificationAsRead } = useAppStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -118,6 +118,7 @@ export default function Layout() {
     if (location.pathname.includes('/new')) return 'New Report';
     if (location.pathname.includes('/reports')) return 'All Reports';
     if (location.pathname.includes('/report/')) return 'Report Preview';
+    if (location.pathname.includes('/notifications')) return 'Notifications';
     return 'Dashboard';
   };
 
@@ -248,20 +249,20 @@ export default function Layout() {
                       <div 
                         key={thread.id} 
                         onClick={() => navigate(`/report/${thread.id}`)}
-                        className={`group flex items-center justify-between px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+                        className={`group flex items-center px-4 py-2 rounded-lg cursor-pointer transition-colors relative overflow-visible ${
                           location.pathname === `/report/${thread.id}` ? 'bg-[#153443]' : 'hover:bg-white/5'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 overflow-hidden">
+                        <div className="flex items-center gap-2.5 overflow-hidden w-full pr-0 group-hover:pr-6 transition-all duration-200">
                           <Pin className="w-3.5 h-3.5 text-white/40 shrink-0 fill-current" />
                           <span className={`text-[13px] truncate ${location.pathname === `/report/${thread.id}` ? 'text-white' : 'text-white/70'}`}>
                             {thread.title || 'Untitled Report'}
                           </span>
                         </div>
-                        <div className="relative" ref={activeMenuId === thread.id ? menuRef : null}>
+                        <div className={`absolute right-2 ${activeMenuId === thread.id ? 'opacity-100 z-50' : 'opacity-0 group-hover:opacity-100 z-10'} transition-opacity`} ref={activeMenuId === thread.id ? menuRef : null}>
                           <button 
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(activeMenuId === thread.id ? null : thread.id); }}
-                            className="opacity-0 group-hover:opacity-100 text-white/40 hover:text-white transition-opacity p-1"
+                            className="text-white/40 hover:text-white transition-opacity p-1 bg-[#153443]/80 rounded-md"
                           >
                             <MoreVertical className="w-3.5 h-3.5" />
                           </button>
@@ -289,20 +290,20 @@ export default function Layout() {
                       <div 
                         key={thread.id} 
                         onClick={() => navigate(`/report/${thread.id}`)}
-                        className={`group flex items-center justify-between px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+                        className={`group flex items-center px-4 py-2 rounded-lg cursor-pointer transition-colors relative overflow-visible ${
                           location.pathname === `/report/${thread.id}` ? 'bg-[#153443]' : 'hover:bg-white/5'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 overflow-hidden">
+                        <div className="flex items-center gap-2.5 overflow-hidden w-full pr-0 group-hover:pr-6 transition-all duration-200">
                           <MessageSquare className="w-3.5 h-3.5 text-white/40 shrink-0" />
                           <span className={`text-[13px] truncate ${location.pathname === `/report/${thread.id}` ? 'text-white' : 'text-white/70'}`}>
                             {thread.title || 'Untitled Report'}
                           </span>
                         </div>
-                        <div className="relative" ref={activeMenuId === thread.id ? menuRef : null}>
+                        <div className={`absolute right-2 ${activeMenuId === thread.id ? 'opacity-100 z-50' : 'opacity-0 group-hover:opacity-100 z-10'} transition-opacity`} ref={activeMenuId === thread.id ? menuRef : null}>
                           <button 
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(activeMenuId === thread.id ? null : thread.id); }}
-                            className="opacity-0 group-hover:opacity-100 text-white/40 hover:text-white transition-opacity p-1"
+                            className="text-white/40 hover:text-white transition-opacity p-1 bg-[#153443]/80 rounded-md"
                           >
                             <MoreVertical className="w-3.5 h-3.5" />
                           </button>
@@ -366,20 +367,32 @@ export default function Layout() {
             </h1>
           </div>
           
-          {!location.pathname.startsWith('/new') && location.pathname !== '/' && (
-            <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6">
+            {!location.pathname.startsWith('/new') && location.pathname !== '/' && (
               <div className="relative hidden md:block w-80">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input 
-                    type="text" 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search reports, topics, or keywords..." 
-                    className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-[#36c0c9] transition-colors placeholder-gray-400 text-gray-700 shadow-sm" 
-                  />
+                <input 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search reports, topics, or keywords..." 
+                  className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-[#36c0c9] transition-colors placeholder-gray-400 text-gray-700 shadow-sm" 
+                />
               </div>
+            )}
+
+            <div className="relative">
+              <button 
+                onClick={() => navigate('/notifications')}
+                className="p-2 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors relative"
+              >
+                <Bell className="w-5 h-5" />
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+                )}
+              </button>
             </div>
-          )}
+          </div>
         </header>
 
         {/* Content Area */}

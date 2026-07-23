@@ -25,7 +25,7 @@ function useOnClickOutside(ref: React.RefObject<any>, handler: (event: MouseEven
 
 export default function BuildRequest() {
   const navigate = useNavigate();
-  const { addThread } = useAppStore();
+  const { addThread, generateReportInBackground } = useAppStore();
   const [showCancelModal, setShowCancelModal] = useState(false);
   
   const [inputs, setInputs] = useState({
@@ -148,14 +148,14 @@ export default function BuildRequest() {
   const showEmptyState = !inputs.geography && inputs.domains.length === 0;
 
   const getRuntime = () => {
-    if (inputs.depth === 'Executive Summary') return '10 – 15 minutes';
+    if (inputs.depth === 'Quick Overview') return '10 – 15 minutes';
     if (inputs.depth === 'Standard Analysis') return '20 – 30 minutes';
     if (inputs.depth === 'Deep Dive') return '30 – 45 minutes';
     return '20 – 30 minutes'; // default fallback
   };
 
   const getPages = () => {
-    if (inputs.depth === 'Executive Summary') return '~20 pages';
+    if (inputs.depth === 'Quick Overview') return '~20 pages';
     if (inputs.depth === 'Standard Analysis') return '~40 pages';
     if (inputs.depth === 'Deep Dive') return '~60 pages';
     return '~40 pages'; // default fallback
@@ -175,7 +175,7 @@ export default function BuildRequest() {
 
     // Create the thread and save it
     const threadId = uuidv4();
-    await addThread({
+    const newThread = {
       id: threadId,
       title: `${inputs.depth} ${inputs.reportType}: ${inputs.geography} - ${inputs.domains.join(', ')}`,
       typeId: 'techLandscape',
@@ -189,9 +189,11 @@ export default function BuildRequest() {
       versions: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      status: 'generating'
-    });
+      status: 'generating' as const
+    };
     
+    await addThread(newThread);
+    generateReportInBackground(threadId, inputs.depth);
     navigate(`/report/${threadId}/generating`);
   };
 
@@ -428,7 +430,7 @@ export default function BuildRequest() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
-                  { title: 'Executive Summary', time: '10 – 15 mins', pages: '~20 pages' },
+                  { title: 'Quick Overview', time: '10 – 15 mins', pages: '~20 pages' },
                   { title: 'Standard Analysis', time: '20 – 30 mins', pages: '~40 pages' },
                   { title: 'Deep Dive', time: '30 – 45 mins', pages: '~60 pages' }
                 ].map(option => (
@@ -693,6 +695,35 @@ export default function BuildRequest() {
                       <div className="flex flex-wrap gap-1.5 w-full">
                         {inputs.focusLens.map(f => (
                           <span key={f} className="px-2.5 py-1 bg-gray-50 border border-gray-200 text-gray-600 rounded-full text-[12px] font-medium leading-none">{f}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {inputs.additionalInstructions && (
+                    <div className="flex flex-col gap-3 py-4 border-b border-gray-100">
+                      <div className="flex items-center gap-3 text-gray-500">
+                        <FileText className="w-4 h-4 text-gray-400" />
+                        <span className="font-medium text-[14px] text-gray-500">Additional Instructions</span>
+                      </div>
+                      <div className="text-[14px] text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        {inputs.additionalInstructions}
+                      </div>
+                    </div>
+                  )}
+
+                  {inputs.files.length > 0 && (
+                    <div className="flex flex-col gap-3 py-4 border-b border-gray-100">
+                      <div className="flex items-center gap-3 text-gray-500">
+                        <Paperclip className="w-4 h-4 text-gray-400" />
+                        <span className="font-medium text-[14px] text-gray-500">Supporting Documents</span>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {inputs.files.map((f, i) => (
+                          <div key={i} className="flex items-center gap-2 text-[13px] bg-white border border-gray-200 p-2 rounded-md shadow-sm">
+                            <FileText className="w-3.5 h-3.5 text-[#36c0c9]" />
+                            <span className="truncate text-gray-700 font-medium">{f.name}</span>
+                          </div>
                         ))}
                       </div>
                     </div>

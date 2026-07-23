@@ -10,6 +10,7 @@ import BuildRequest from './pages/BuildRequest';
 import ReviewRequest from './pages/ReviewRequest';
 import GenerateReport from './pages/GenerateReport';
 import ReportSummary from './pages/ReportSummary';
+import Notifications from './pages/Notifications';
 
 export default function App() {
   const { loadThreads, user } = useAppStore();
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="new/tech/review" element={<ReviewRequest />} />
         <Route path="report/:id/generating" element={<GenerateReport />} />
         <Route path="report/:id" element={<ReportSummary />} />
+        <Route path="notifications" element={<Notifications />} />
       </Route>
     </Routes>
   );

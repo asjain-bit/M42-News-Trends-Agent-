@@ -8,10 +8,41 @@ interface ReportMatrixProps {
     weaknesses: string[];
     opportunities: string[];
     threats: string[];
+    quadrants?: Array<{ title: string; items: string[] }>;
   };
+  isWordDocument?: boolean;
 }
 
-export const ReportMatrix: React.FC<ReportMatrixProps> = ({ data }) => {
+export const ReportMatrix: React.FC<ReportMatrixProps> = ({ data, isWordDocument }) => {
+  if (isWordDocument) {
+    const quadrants = [
+      { title: 'Strengths', items: data.strengths || [] },
+      { title: 'Weaknesses', items: data.weaknesses || [] },
+      { title: 'Opportunities', items: data.opportunities || [] },
+      { title: 'Threats', items: data.threats || [] }
+    ];
+    return (
+      <div className="my-8">
+        <h3 className="text-xl font-bold text-[#0D212C] mb-6 text-center">SWOT Analysis Matrix</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {quadrants.map((quad, idx) => (
+            <div key={idx} className="border border-gray-300 p-6">
+              <h4 className="text-lg font-bold text-[#0D212C] mb-4">{quad.title}</h4>
+              <ul className="space-y-3">
+                {quad.items.map((item, i) => (
+                  <li key={i} className="flex gap-3 text-gray-700 text-[14px]">
+                    <span className="text-[#36c0c9] font-bold mt-0.5">•</span>
+                    <span className="leading-relaxed">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="my-10">
       <h3 className="text-xl font-bold text-[#0D212C] mb-6 text-center">SWOT Analysis Matrix</h3>

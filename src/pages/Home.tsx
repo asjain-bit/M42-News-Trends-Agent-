@@ -235,8 +235,10 @@ export default function Home() {
             <motion.div 
               key={thread.id} 
               variants={item}
-              onClick={() => navigate(`/report/${thread.id}`)}
-              className="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.15)] transition-all cursor-pointer group flex flex-col h-full duration-300"
+              onClick={() => thread.status === 'generating' ? null : navigate(`/report/${thread.id}`)}
+              className={`bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.1)] transition-all flex flex-col h-full duration-300 relative ${
+                thread.status === 'generating' ? 'opacity-75 cursor-default' : 'hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.15)] cursor-pointer group'
+              }`}
             >
               <div className="flex items-start justify-between mb-5">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -244,34 +246,40 @@ export default function Home() {
                     <Globe className="w-3.5 h-3.5" />
                     {thread.typeId === 'techLandscape' ? 'Tech Landscape' : thread.typeId}
                   </div>
-                  {avgConf > 0 && (
+                  {avgConf > 0 && thread.status !== 'generating' && (
                     <div className={`text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 ${confColor}`}>
                       <ShieldCheck className="w-3 h-3" />
-                      {avgConf}%
+                      {avgConf >= 80 ? 'High' : avgConf >= 40 ? 'Medium' : 'Low'}
+                    </div>
+                  )}
+                  {thread.status === 'generating' && (
+                    <div className="bg-[#36c0c9]/10 text-[#0E7C86] text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 bg-[#36c0c9] rounded-full animate-pulse"></span>
+                      Generating
                     </div>
                   )}
                   {thread.isPinnedOnHome && (
                     <Pin className="w-3 h-3 text-gray-400 fill-gray-400" />
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative" ref={activeMenuId === thread.id ? menuRef : null}>
-                    <button 
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(activeMenuId === thread.id ? null : thread.id); }}
-                      className="p-1.5 -mr-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all z-10"
-                    >
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
-                    {activeMenuId === thread.id && (
-                      <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
-                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateThread({...thread, isPinnedOnHome: !thread.isPinnedOnHome}); setActiveMenuId(null); notificationService.notify(thread.isPinnedOnHome ? "Report unpinned" : "Report pinned", "success"); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">{thread.isPinnedOnHome ? 'Unpin' : 'Pin'}</button>
-                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDownload(thread); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">Download</button>
-                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteThread(thread.id); setActiveMenuId(null); notificationService.notify("Report deleted", "success"); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">Delete</button>
-                      </div>
-                    )}
-                  </div>
+                  {thread.status !== 'generating' && (
+                    <div className="relative" ref={activeMenuId === thread.id ? menuRef : null}>
+                      <button 
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveMenuId(activeMenuId === thread.id ? null : thread.id); }}
+                        className="p-1.5 -mr-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all z-10"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                      {activeMenuId === thread.id && (
+                        <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateThread({...thread, isPinnedOnHome: !thread.isPinnedOnHome}); setActiveMenuId(null); notificationService.notify(thread.isPinnedOnHome ? "Report unpinned" : "Report pinned", "success"); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">{thread.isPinnedOnHome ? 'Unpin' : 'Pin'}</button>
+                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDownload(thread); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">Download</button>
+                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteThread(thread.id); setActiveMenuId(null); notificationService.notify("Report deleted", "success"); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">Delete</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
               
               <h3 className="font-semibold text-[17px] text-[#0D212C] mb-3 truncate font-['Poppins']">
                 {thread.title || "Untitled Intelligence Report"}
@@ -290,17 +298,19 @@ export default function Home() {
                 <span className="text-[#0E7C86] ml-1">+2</span>
               </div>
               
-              <div className="mt-auto pt-4 flex items-center justify-between text-[13px] text-gray-500 border-t border-gray-100 font-medium">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-gray-400" />
-                  {42 + (thread.id.charCodeAt(0) % 20)} Pages
+              {thread.status !== 'generating' && (
+                <div className="mt-auto pt-4 flex items-center justify-between text-[13px] text-gray-500 border-t border-gray-100 font-medium">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-400" />
+                    {42 + (thread.id.charCodeAt(0) % 20)} Pages
+                  </div>
+                  <div className="w-px h-4 bg-gray-200" />
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    {new Date(thread.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </div>
                 </div>
-                <div className="w-px h-4 bg-gray-200" />
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  {new Date(thread.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </div>
-              </div>
+              )}
             </motion.div>
           )})}
         </motion.div>

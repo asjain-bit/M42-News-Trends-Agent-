@@ -62,12 +62,11 @@ export const generateDummyReportSections = (depth: string = "Standard", version:
     id,
     type: 'sources-list',
     data: { 
-       icons: [
-          'https://www.google.com/s2/favicons?domain=ft.com&sz=128',
-          'https://www.google.com/s2/favicons?domain=gartner.com&sz=128',
-          'https://www.google.com/s2/favicons?domain=bloomberg.com&sz=128'
-       ],
-       moreCount: 3
+       sources: [
+          { name: 'Financial Times', icon: 'https://www.google.com/s2/favicons?domain=ft.com&sz=128', url: 'https://ft.com' },
+          { name: 'Gartner Research', icon: 'https://www.google.com/s2/favicons?domain=gartner.com&sz=128', url: 'https://gartner.com' },
+          { name: 'Bloomberg', icon: 'https://www.google.com/s2/favicons?domain=bloomberg.com&sz=128', url: 'https://bloomberg.com' }
+       ]
     }
   });
 
@@ -112,7 +111,27 @@ export const generateDummyReportSections = (depth: string = "Standard", version:
       ),
       textBlock("es-text-2", 2),
       quoteBlock("es-quote-1", "The inflection point of generative AI is no longer a futuristic prediction; it is an immediate mandate for survival in the enterprise arena.", "Dr. Sarah Chen", "Chief AI Architect, Global Insights"),
+      {
+        id: "es-highlight-1",
+        type: "highlight-box",
+        data: {
+          label: "Executive Note",
+          title: "The $4.5 Trillion AI Economic Value",
+          content: "The total economic impact of adopting enterprise-grade AI infrastructure could add an estimated $4.5 trillion annually to the global economy by 2028, primarily driven by productivity gains and automated strategic planning."
+        }
+      },
       imageBlock("es-img-1", "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200", "Data Analytics Dashboard", "Enterprise infrastructure dashboard visualization."),
+      {
+        id: "es-takeaways-1",
+        type: "key-takeaways",
+        data: {
+          items: [
+            "Generative AI has evolved from a novelty to core enterprise infrastructure.",
+            "Market leaders are shifting investments from proof-of-concepts to scalable, secure deployments.",
+            "Regulatory compliance is becoming the primary differentiator for Tier 1 hyperscalers."
+          ]
+        }
+      },
       sourcesBlock("es-sources")
     ]
   });
@@ -184,6 +203,17 @@ export const generateDummyReportSections = (depth: string = "Standard", version:
       ),
       textBlock("cl-text-2", 4),
       calloutBlock("cl-callout-1", "Watch Out", "Regulatory Fragmentation", "The EU AI Act combined with decentralized US state policies will create a fragmented compliance landscape, disproportionately impacting Tier 2 Foundation Models."),
+      {
+        id: "cl-recommendation-1",
+        type: "recommendation",
+        data: {
+          title: "Establish Decentralized Compliance Architecture",
+          priority: "High",
+          timeline: "Q3 2024 - Q1 2025",
+          description: "Given the fragmented regulatory environment, M42 must develop a localized compliance node architecture that dynamically adjusts data handling rules based on geographic latency points.",
+          impact: "Avoids potential $50M+ in GDPR and local regulatory fines while maintaining 99.9% uptime."
+        }
+      },
       sourcesBlock("cl-sources")
     ]
   });
@@ -232,6 +262,28 @@ export const generateDummyReportSections = (depth: string = "Standard", version:
         calloutBlock(`dd-${i}-callout`, "Market Opportunity", `Leverage Early Adoption in Sector ${i}`, "First-mover advantage in this specific vertical yields a 3x higher retention rate compared to broad-market approaches."),
         textBlock(`dd-${i}-text-2`, 4),
         quoteBlock(`dd-${i}-quote`, "Organizations that fail to recognize the nuanced demands of this sector will find themselves permanently locked out of the next super-cycle.", "Executive Board", "Global Tech Council"),
+        imageBlock(`dd-${i}-img`, "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200", `Global Architecture Map ${i}`, `Distributed network topology for sector ${i}.`),
+        {
+          id: `dd-${i}-timeline`,
+          type: "timeline",
+          data: {
+            events: [
+              { date: "Month 1-3", title: "Infrastructure Audit", description: "Complete systemic review of existing legacy databases." },
+              { date: "Month 4-6", title: "Pilot Deployment", description: "Launch sandbox testing for core algorithmic workloads." },
+              { date: "Month 7-12", title: "Full Scale Integration", description: "Rollout across all primary enterprise segments." }
+            ]
+          }
+        },
+        tableBlock(
+          `dd-${i}-table`,
+          `Implementation Framework ${i}`,
+          [{ key: "phase", label: "Phase" }, { key: "duration", label: "Duration" }, { key: "status", label: "Status" }],
+          [
+            { phase: "Discovery", duration: "2 Weeks", status: "Complete" },
+            { phase: "Design", duration: "4 Weeks", status: "In Progress" },
+            { phase: "Development", duration: "12 Weeks", status: "Pending" }
+          ]
+        ),
         sourcesBlock(`dd-${i}-sources`)
       ]
     });

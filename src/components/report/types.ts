@@ -9,7 +9,10 @@ export type BlockType =
   | 'image' 
   | 'quote' 
   | 'two-column'
-  | 'sources-list';
+  | 'sources-list'
+  | 'key-takeaways'
+  | 'recommendation'
+  | 'highlight-box';
 
 export interface ReportBlock {
   id: string;
