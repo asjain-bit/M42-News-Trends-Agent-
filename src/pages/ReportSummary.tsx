@@ -549,7 +549,7 @@ export default function ReportSummary() {
               onClick={() => setActiveTab('word-document')}
               className={`pb-3 text-[15px] font-medium transition-colors relative ${activeTab === 'word-document' ? 'text-[#36c0c9]' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              Word Document
+              Detailed Report
               {activeTab === 'word-document' && <div className="absolute bottom-[-1px] left-0 w-full h-[2px] bg-[#36c0c9]" />}
             </button>
           </div>
