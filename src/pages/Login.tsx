@@ -17,11 +17,11 @@ export default function Login() {
   const handleLogin = async (role: "strategy" | "general") => {
     setIsAuthenticating(true);
     
-    // Reduced loading simulation to 2.5 seconds
+    // Reduced loading simulation to 800ms
     setTimeout(async () => {
       await login(role);
       navigate('/');
-    }, 2500);
+    }, 800);
   };
 
   // Inline loading is handled directly on the button now

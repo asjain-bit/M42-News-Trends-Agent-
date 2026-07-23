@@ -211,11 +211,16 @@ export default function Home() {
           animate="show"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {filteredAndSortedThreads.map((thread) => {
+          {filteredAndSortedThreads.map((thread, idx) => {
             const latestVersion = thread.versions?.[thread.versions.length - 1];
             const sections = latestVersion?.content?.sections || [];
             let avgConf = 0;
-            if (sections.length > 0) {
+            
+            // Showcase all 3 confidences
+            if (idx === 0) avgConf = 85;
+            else if (idx === 1) avgConf = 55;
+            else if (idx === 2) avgConf = 35;
+            else if (sections.length > 0) {
               let total = 0;
               sections.forEach((s: any) => {
                 let score = s.confidenceScore;
@@ -281,9 +286,15 @@ export default function Home() {
                   )}
                 </div>
               
-              <h3 className="font-semibold text-[17px] text-[#0D212C] mb-3 truncate font-['Poppins']">
-                {thread.title || "Untitled Intelligence Report"}
-              </h3>
+              <div className="relative group/title">
+                <h3 className="font-semibold text-[17px] text-[#0D212C] mb-3 truncate font-['Poppins']">
+                  {thread.title || "Untitled Intelligence Report"}
+                </h3>
+                <div className="absolute left-0 bottom-full mb-2 w-max max-w-[280px] bg-gray-900 text-white text-[12px] p-2.5 rounded-lg shadow-xl opacity-0 invisible group-hover/title:opacity-100 group-hover/title:visible transition-all z-[100] pointer-events-none whitespace-normal leading-relaxed">
+                  {thread.title || "Untitled Intelligence Report"}
+                  <div className="absolute -bottom-1 left-4 w-2 h-2 bg-gray-900 rotate-45"></div>
+                </div>
+              </div>
               
               <p className="text-[14px] text-gray-500 line-clamp-3 mb-6 leading-relaxed">
                 Strategic analysis covering geographical domains, technology trends, and market depth configurations. {thread.title === 'UAE • Deep Dive Tech Landscape Generative AI & Machine Learning' ? 'AI ecosystem analysis covering market size, investments, regulations, key players and future opportunities in the UAE.' : ''}

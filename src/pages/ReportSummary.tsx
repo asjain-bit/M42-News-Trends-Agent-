@@ -19,6 +19,10 @@ export default function ReportSummary() {
   const { threads, updateThread, generateReportInBackground } = useAppStore();
   
   const thread = threads.find(t => t.id === id);
+  // Get index of this thread among filtered/sorted threads to match Home screen mock logic
+  // In Home.tsx, it's based on filteredAndSortedThreads. For simplicity, we just use the threads list since they are typically sorted by updatedAt desc.
+  const sortedThreads = [...threads].sort((a, b) => b.updatedAt - a.updatedAt);
+  const threadIdx = sortedThreads.findIndex(t => t.id === id);
   const [activeSection, setActiveSection] = useState<string>('');
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   
@@ -648,16 +652,23 @@ export default function ReportSummary() {
                     )}
                   </div>
                   
-                  {averageConfidence > 0 && (
-                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px] font-semibold border ml-2 ${
-                      averageConfidence >= 80 ? 'bg-green-50 text-green-700 border-green-100' : 
-                      averageConfidence >= 40 ? 'bg-orange-50 text-orange-700 border-orange-100' : 
-                      'bg-red-50 text-red-700 border-red-100'
-                    }`}>
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      {averageConfidence >= 80 ? 'High' : averageConfidence >= 40 ? 'Medium' : 'Low'} Confidence
-                    </div>
-                  )}
+                  {(() => {
+                    let avgConf = averageConfidence;
+                    if (threadIdx === 0) avgConf = 85;
+                    else if (threadIdx === 1) avgConf = 55;
+                    else if (threadIdx === 2) avgConf = 35;
+                    
+                    return avgConf > 0 && (
+                      <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px] font-semibold border ml-2 ${
+                        avgConf >= 80 ? 'bg-green-50 text-green-700 border-green-100' : 
+                        avgConf >= 40 ? 'bg-orange-50 text-orange-700 border-orange-100' : 
+                        'bg-red-50 text-red-700 border-red-100'
+                      }`}>
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        {avgConf >= 80 ? 'High' : avgConf >= 40 ? 'Medium' : 'Low'} Confidence
+                      </div>
+                    );
+                  })()}
                </div>
             </div>
 
